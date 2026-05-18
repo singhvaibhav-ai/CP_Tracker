@@ -137,7 +137,7 @@ export default function Home() {
             <div key={collapseId} className="space-y-2">
               <button 
                 onClick={() => toggleCollapse(collapseId)}
-                className="flex items-center gap-2 px-3 py-2 -mx-3 w-[calc(100%+1.5rem)] text-left group border-b border-zinc-800/50 rounded-lg bg-zinc-900/20 shadow-sm"
+                className="flex items-center gap-2 px-3 py-2 -mx-3 w-[calc(100%+1.5rem)] text-left group border-b border-zinc-800/50 rounded-lg bg-zinc-950/80 backdrop-blur-md shadow-sm sticky top-[220px] z-20"
               >
                 <ChevronDown 
                   className={`w-4 h-4 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`} 
@@ -363,7 +363,7 @@ export default function Home() {
                           
                           {/* LECTURES COLUMN */}
                           <div className={`space-y-6 ${activeTab === 'problems' ? 'hidden md:block' : ''}`}>
-                            <div className="bg-zinc-950 py-4 border-b border-zinc-800 flex items-center gap-3">
+                            <div className="bg-zinc-950/80 backdrop-blur-md py-4 border-b border-zinc-800 flex items-center gap-3 sticky top-[112px] z-40">
                               <div className="p-2 bg-blue-500/20 rounded-lg">
                                 <Video className="w-5 h-5 text-blue-400" />
                               </div>
@@ -386,7 +386,7 @@ export default function Home() {
 
                                 return (
                                   <div key={`lectures-day-${day.dayNumber}`} className="space-y-4 bg-zinc-900/30 p-5 pt-0 rounded-2xl border border-zinc-800/40">
-                                    <div className="flex items-center gap-4 py-4 -mx-5 px-5 border-b border-zinc-800/50 rounded-t-2xl shadow-sm bg-zinc-900/40">
+                                    <div className="flex items-center gap-4 py-4 -mx-5 px-5 border-b border-zinc-800/50 rounded-t-2xl shadow-sm bg-zinc-950/80 backdrop-blur-md sticky top-[168px] z-30">
                                       <span className="text-sm font-black text-blue-500/80 uppercase tracking-widest whitespace-nowrap">
                                         Day {day.dayNumber}
                                      </span>
@@ -414,7 +414,7 @@ export default function Home() {
 
                           {/* PROBLEMS COLUMN */}
                           <div className={`space-y-6 ${activeTab === 'lectures' ? 'hidden md:block' : ''}`}>
-                            <div className="bg-zinc-950 py-4 border-b border-zinc-800 flex items-center gap-3">
+                            <div className="bg-zinc-950/80 backdrop-blur-md py-4 border-b border-zinc-800 flex items-center gap-3 sticky top-[112px] z-40">
                               <div className="p-2 bg-emerald-500/20 rounded-lg">
                                 <Code className="w-5 h-5 text-emerald-400" />
                               </div>
@@ -437,7 +437,7 @@ export default function Home() {
 
                                 return (
                                   <div key={`problems-day-${day.dayNumber}`} className="space-y-4 bg-zinc-900/30 p-5 pt-0 rounded-2xl border border-zinc-800/40">
-                                    <div className="flex items-center gap-4 py-4 -mx-5 px-5 border-b border-zinc-800/50 rounded-t-2xl shadow-sm bg-zinc-900/40">
+                                    <div className="flex items-center gap-4 py-4 -mx-5 px-5 border-b border-zinc-800/50 rounded-t-2xl shadow-sm bg-zinc-950/80 backdrop-blur-md sticky top-[168px] z-30">
                                       <span className="text-sm font-black text-emerald-500/80 uppercase tracking-widest whitespace-nowrap">
                                         Day {day.dayNumber}
                                       </span>
