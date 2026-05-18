@@ -10,3 +10,21 @@ body {
   background-color: #09090b; /* zinc-950 */
   color: #f4f4f5; /* zinc-100 */
 }
+
+/* Perfect Glassmorphism Light Mode Inversion */
+html.light-mode {
+  filter: invert(0.92) hue-rotate(180deg);
+}
+
+/* Prevent double-inversion on images, icons, and logo */
+html.light-mode img,
+html.light-mode .no-invert,
+html.light-mode iframe,
+html.light-mode svg:not(.lucide) {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+html {
+  transition: filter 0.3s ease;
+  background-color: #09090b;
+}

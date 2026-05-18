@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { differenceInDays, startOfDay, format, addDays } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Target, Calendar as CalendarIcon, Zap, Video, Code, Lock, CheckCircle2, ChevronDown, Unlock } from 'lucide-react';
+import { Target, Calendar as CalendarIcon, Zap, Video, Code, Lock, CheckCircle2, ChevronDown, Unlock, Sun, Moon } from 'lucide-react';
 import Image from 'next/image';
 import { Toaster } from 'sonner';
 import { useTrackerStore } from '../store/useTrackerStore';
@@ -27,6 +27,28 @@ export default function Home() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  // Load and apply persistent theme preference on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light';
+    if (savedTheme === 'light') {
+      setTheme('light');
+      document.documentElement.classList.add('light-mode');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    if (theme === 'dark') {
+      setTheme('light');
+      document.documentElement.classList.add('light-mode');
+      localStorage.setItem('theme', 'light');
+    } else {
+      setTheme('dark');
+      document.documentElement.classList.remove('light-mode');
+      localStorage.setItem('theme', 'dark');
+    }
+  };
   
   const courseDays = useTrackerStore((state) => state.courseDays);
   const getOverallProgress = useTrackerStore((state) => state.getOverallProgress);
@@ -137,7 +159,7 @@ export default function Home() {
             <div key={collapseId} className="space-y-2">
               <button 
                 onClick={() => toggleCollapse(collapseId)}
-                className="flex items-center gap-2 px-3 h-[48px] py-0 w-full text-left group border-b border-zinc-800/50 rounded-lg bg-zinc-950/90 backdrop-blur-md shadow-md sticky top-[244px] z-20"
+                className="flex items-center gap-2 px-3 h-[48px] py-0 w-full text-left group border-b border-zinc-800/50 rounded-none bg-zinc-950/90 backdrop-blur-md shadow-md sticky top-[244px] z-20"
               >
                 <ChevronDown 
                   className={`w-4 h-4 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`} 
@@ -390,7 +412,7 @@ export default function Home() {
                                   <div key={`lectures-day-${day.dayNumber}`} className="space-y-4 bg-zinc-900/30 p-5 pt-0 rounded-2xl border border-zinc-800/40">
                                     <button
                                       onClick={() => toggleCollapse(dayCollapseId)}
-                                      className="w-full flex items-center gap-4 h-[60px] py-0 px-4 border-b border-zinc-800/50 rounded-xl shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
+                                      className="w-full flex items-center gap-4 h-[60px] py-0 px-4 border-b border-zinc-800/50 rounded-none shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
                                     >
                                       <ChevronDown 
                                         className={`w-5 h-5 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isDayCollapsed ? '-rotate-90' : 'rotate-0'}`} 
@@ -461,7 +483,7 @@ export default function Home() {
                                   <div key={`problems-day-${day.dayNumber}`} className="space-y-4 bg-zinc-900/30 p-5 pt-0 rounded-2xl border border-zinc-800/40">
                                     <button
                                       onClick={() => toggleCollapse(dayCollapseId)}
-                                      className="w-full flex items-center gap-4 h-[60px] py-0 px-4 border-b border-zinc-800/50 rounded-xl shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
+                                      className="w-full flex items-center gap-4 h-[60px] py-0 px-4 border-b border-zinc-800/50 rounded-none shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
                                     >
                                       <ChevronDown 
                                         className={`w-5 h-5 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isDayCollapsed ? '-rotate-90' : 'rotate-0'}`} 
@@ -528,10 +550,20 @@ export default function Home() {
         </div>
       </main>
 
+      {/* THEME TOGGLE BUTTON */}
+      <button 
+        onClick={toggleTheme}
+        className="fixed bottom-[88px] right-6 p-4 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-amber-400 hover:border-amber-500/30 transition-all shadow-xl z-50 group"
+        title="Toggle Theme"
+      >
+        {theme === 'dark' ? <Sun className="w-5 h-5 group-hover:rotate-45 transition-transform duration-300" /> : <Moon className="w-5 h-5 text-amber-500" />}
+      </button>
+
       {/* ADMIN AUTH BUTTON */}
       <button 
         onClick={() => isAuthenticated ? logout() : setShowAuthModal(true)}
         className="fixed bottom-6 right-6 p-4 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-emerald-400 hover:border-emerald-500/30 transition-all shadow-xl z-50 group"
+        title="Owner Mode"
       >
         {isAuthenticated ? <Unlock className="w-5 h-5 text-emerald-500" /> : <Lock className="w-5 h-5 group-hover:scale-110 transition-transform" />}
       </button>
