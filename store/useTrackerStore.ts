@@ -147,6 +147,28 @@ export const useTrackerStore = create<TrackerStore & {
         return (completed / total) * 100;
       },
 
+      getLevelProgress: (startDay: number, endDay: number) => {
+        const { courseDays } = get();
+        let total = 0;
+        let completed = 0;
+        
+        for (const day of courseDays) {
+          if (day.dayNumber >= startDay && day.dayNumber <= endDay) {
+            for (const task of day.lectures) {
+              total++;
+              if (task.isCompleted) completed++;
+            }
+            for (const task of day.problems) {
+              total++;
+              if (task.isCompleted) completed++;
+            }
+          }
+        }
+        
+        if (total === 0) return 0;
+        return (completed / total) * 100;
+      },
+
       isModuleComplete: (moduleName, type) => {
         const { courseDays } = get();
         let hasTasks = false;

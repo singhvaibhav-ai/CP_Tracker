@@ -26,6 +26,7 @@ export interface TrackerStore {
   collapsedItems: string[];
   toggleTask: (dayNumber: number, taskId: string, type: 'lectures' | 'problems') => void;
   getOverallProgress: () => number;
+  getLevelProgress: (startDay: number, endDay: number) => number;
   toggleCollapse: (id: string) => void;
   initHydration: () => Promise<void>;
   isAuthenticated: boolean;

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { differenceInDays, startOfDay, format, addDays } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, Calendar as CalendarIcon, Zap, Video, Code, Lock, CheckCircle2, ChevronDown, Unlock } from 'lucide-react';
+import Image from 'next/image';
 import { Toaster } from 'sonner';
 import { useTrackerStore } from '../store/useTrackerStore';
 import DateStrip from '../components/DateStrip';
@@ -29,6 +30,7 @@ export default function Home() {
   
   const courseDays = useTrackerStore((state) => state.courseDays);
   const getOverallProgress = useTrackerStore((state) => state.getOverallProgress);
+  const getLevelProgress = useTrackerStore((state) => state.getLevelProgress);
   const isModuleComplete = useTrackerStore((state) => state.isModuleComplete);
   const isLevelComplete = useTrackerStore((state) => state.isLevelComplete);
   const collapsedItems = useTrackerStore((state) => state.collapsedItems);
@@ -151,11 +153,10 @@ export default function Home() {
               <AnimatePresence initial={false}>
                 {!isCollapsed && (
                   <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
+                    initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                    animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
+                    exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="overflow-hidden"
                   >
                     <div className="space-y-2 pt-1">
                       {moduleTasks.map(task => (
@@ -191,10 +192,15 @@ export default function Home() {
                 </span>
               </div>
               <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white flex items-center gap-4">
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-blue-500">
-                  70-Day
+                <div className="relative w-12 h-12 md:w-16 md:h-16 overflow-hidden rounded-xl md:rounded-2xl shadow-lg border border-zinc-800 bg-zinc-900 shrink-0">
+                  <Image src="/logo.png" alt="TLE Logo" fill className="object-cover" />
+                </div>
+                <span>
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-blue-500">
+                    TLE
+                  </span>
+                  {' '}CP Tracker
                 </span>
-                1600+ CP
               </h1>
             </div>
 
@@ -274,22 +280,47 @@ export default function Home() {
                   >
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 group-hover:opacity-30 transition-opacity"></div>
                     <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-4">
-                          <ChevronDown 
-                            className={`w-8 h-8 text-zinc-500 transition-transform duration-500 group-hover:text-zinc-400 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`} 
-                          />
-                          <div className="text-emerald-500 font-bold tracking-[0.2em] uppercase text-sm">
-                            {level.dates}
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 w-full text-left">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-4">
+                            <ChevronDown 
+                              className={`w-8 h-8 text-zinc-500 transition-transform duration-500 group-hover:text-zinc-400 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`} 
+                            />
+                            <div className="text-emerald-500 font-bold tracking-[0.2em] uppercase text-sm">
+                              {level.dates}
+                            </div>
+                          </div>
+                          <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight flex items-center gap-4 pl-12">
+                            🏆 {level.name}
+                          </h2>
+                        </div>
+                        
+                        {/* LEVEL PROGRESS BAR */}
+                        <div className="flex flex-col sm:flex-row items-center gap-6 lg:ml-auto pl-12 lg:pl-0">
+                          <div className="shrink-0">
+                            <div className="text-[10px] font-black text-zinc-500 tracking-widest mb-1.5 uppercase text-left">
+                              Level Progress
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="w-48 h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800/80 shadow-inner">
+                                <motion.div 
+                                  className="h-full bg-gradient-to-r from-blue-500 to-emerald-400 rounded-full"
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${getLevelProgress(level.start, level.end)}%` }}
+                                  transition={{ duration: 1, ease: "easeOut" }}
+                                />
+                              </div>
+                              <span className="font-bold text-sm text-emerald-400 w-10">
+                                {getLevelProgress(level.start, level.end)}%
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="hidden lg:flex shrink-0 px-6 py-3 bg-zinc-950/80 backdrop-blur-md rounded-2xl border border-zinc-800 text-zinc-400 font-medium items-center gap-3">
+                            {isCompleted && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                            Days {level.start} — {level.end}
                           </div>
                         </div>
-                        <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight flex items-center gap-4 pl-12">
-                          🏆 {level.name}
-                        </h2>
-                      </div>
-                      <div className="px-6 py-3 bg-zinc-950/80 backdrop-blur-md rounded-2xl border border-zinc-800 text-zinc-400 font-medium flex items-center gap-3">
-                        {isCompleted && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
-                        Days {level.start} — {level.end}
                       </div>
                     </div>
                   </button>
@@ -298,11 +329,10 @@ export default function Home() {
                   <AnimatePresence initial={false}>
                     {!isCollapsed && (
                       <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
+                        initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                        animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
+                        exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
                         transition={{ duration: 0.5, ease: 'easeInOut' }}
-                        className="overflow-hidden"
                       >
                         <div className="md:hidden flex p-1 bg-zinc-900 border border-zinc-800 rounded-xl mt-6">
                           <button 
