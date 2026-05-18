@@ -1,0 +1,159 @@
+import { create } from 'zustand';
+import { TrackerStore, DailyLog } from '../types';
+import { INITIAL_TRACKER_DATA } from '../lib/seedData';
+import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
+
+export const useTrackerStore = create<TrackerStore & {
+  isModuleComplete: (moduleName: string, type: 'lectures' | 'problems') => boolean;
+  isLevelComplete: (startDay: number, endDay: number) => boolean;
+}>()((set, get) => ({
+      courseDays: INITIAL_TRACKER_DATA,
+      dailyLogs: {},
+      collapsedItems: [],
+      
+      initHydration: async () => {
+        try {
+          const { data, error } = await supabase.from('user_progress').select('task_id, is_completed');
+          if (error) throw error;
+
+          if (data && data.length > 0) {
+            set((state) => {
+              const courseDays = [...state.courseDays];
+              const completedTaskIds = new Set(data.filter(r => r.is_completed).map(r => r.task_id));
+
+              courseDays.forEach(day => {
+                day.lectures.forEach(task => {
+                  if (completedTaskIds.has(task.id)) task.isCompleted = true;
+                });
+                day.problems.forEach(task => {
+                  if (completedTaskIds.has(task.id)) task.isCompleted = true;
+                });
+              });
+
+              return { ...state, courseDays };
+            });
+          }
+        } catch (err) {
+          console.error('Failed to hydrate from Supabase:', err);
+          toast.error('Failed to sync progress from cloud.');
+        }
+      },
+      
+      toggleCollapse: (id) => set((state) => {
+        const collapsedItems = state.collapsedItems.includes(id)
+          ? state.collapsedItems.filter(itemId => itemId !== id)
+          : [...state.collapsedItems, id];
+        return { collapsedItems };
+      }),
+      
+      toggleTask: (dayNumber, taskId, type) => {
+        let wasCompleted = false;
+        let isCompleted = false;
+
+        set((state) => {
+          const courseDays = [...state.courseDays];
+          const dayIndex = courseDays.findIndex((d) => d.dayNumber === dayNumber);
+          
+          if (dayIndex === -1) return state;
+
+          const day = { ...courseDays[dayIndex] };
+          const tasks = [...day[type]];
+          
+          const taskIndex = tasks.findIndex((t) => t.id === taskId);
+          if (taskIndex === -1) return state;
+
+          wasCompleted = tasks[taskIndex].isCompleted;
+          isCompleted = !wasCompleted;
+          tasks[taskIndex] = { ...tasks[taskIndex], isCompleted };
+          
+          day[type] = tasks;
+          courseDays[dayIndex] = day;
+
+          return { ...state, courseDays };
+        });
+
+        // Fire async upsert
+        supabase.from('user_progress').upsert({ task_id: taskId, is_completed: isCompleted }).then(({ error }) => {
+          if (error) {
+            console.error('Failed to sync toggle:', error);
+            toast.error('Failed to sync progress. Rolling back.');
+            
+            // Rollback
+            set((state) => {
+              const courseDays = [...state.courseDays];
+              const dayIndex = courseDays.findIndex((d) => d.dayNumber === dayNumber);
+              if (dayIndex !== -1) {
+                const day = { ...courseDays[dayIndex] };
+                const tasks = [...day[type]];
+                const taskIndex = tasks.findIndex((t) => t.id === taskId);
+                if (taskIndex !== -1) {
+                  tasks[taskIndex] = { ...tasks[taskIndex], isCompleted: wasCompleted };
+                  day[type] = tasks;
+                  courseDays[dayIndex] = day;
+                }
+              }
+              return { ...state, courseDays };
+            });
+          }
+        });
+      },
+      
+      getOverallProgress: () => {
+        const { courseDays } = get();
+        let total = 0;
+        let completed = 0;
+        
+        for (const day of courseDays) {
+          for (const task of day.lectures) {
+            total++;
+            if (task.isCompleted) completed++;
+          }
+          for (const task of day.problems) {
+            total++;
+            if (task.isCompleted) completed++;
+          }
+        }
+        
+        if (total === 0) return 0;
+        return (completed / total) * 100;
+      },
+
+      isModuleComplete: (moduleName, type) => {
+        const { courseDays } = get();
+        let hasTasks = false;
+        
+        for (const day of courseDays) {
+          for (const task of day[type]) {
+            if (task.moduleName === moduleName) {
+              hasTasks = true;
+              if (!task.isCompleted) {
+                return false;
+              }
+            }
+          }
+        }
+        
+        return hasTasks;
+      },
+
+      isLevelComplete: (startDay, endDay) => {
+        const { courseDays } = get();
+        let hasTasks = false;
+
+        for (const day of courseDays) {
+          if (day.dayNumber >= startDay && day.dayNumber <= endDay) {
+            for (const task of day.lectures) {
+              hasTasks = true;
+              if (!task.isCompleted) return false;
+            }
+            for (const task of day.problems) {
+              hasTasks = true;
+              if (!task.isCompleted) return false;
+            }
+          }
+        }
+
+        return hasTasks;
+      }
+    }));
