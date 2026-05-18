@@ -165,8 +165,8 @@ export const useTrackerStore = create<TrackerStore & {
           }
         }
         
-        if (total === 0) return 0;
-        return (completed / total) * 100;
+        const percentage = total === 0 ? 0 : parseFloat(((completed / total) * 100).toFixed(1));
+        return { percentage, completed, total };
       },
 
       isModuleComplete: (moduleName, type) => {

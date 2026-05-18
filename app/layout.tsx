@@ -7,6 +7,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "TLE CP Tracker",
   description: "A highly interactive progress tracking application for Competitive Programming.",
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 export default function RootLayout({

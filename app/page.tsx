@@ -137,7 +137,7 @@ export default function Home() {
             <div key={collapseId} className="space-y-2">
               <button 
                 onClick={() => toggleCollapse(collapseId)}
-                className="flex items-center gap-2 px-3 py-2 -mx-3 w-[calc(100%+1.5rem)] text-left group sticky top-[135px] z-10 bg-zinc-950/95 backdrop-blur-xl border-b border-zinc-800/50 rounded-lg shadow-sm"
+                className="flex items-center gap-2 px-3 py-2 -mx-3 w-[calc(100%+1.5rem)] text-left group border-b border-zinc-800/50 rounded-lg bg-zinc-900/20 shadow-sm"
               >
                 <ChevronDown 
                   className={`w-4 h-4 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`} 
@@ -296,31 +296,41 @@ export default function Home() {
                         </div>
                         
                         {/* LEVEL PROGRESS BAR */}
-                        <div className="flex flex-col sm:flex-row items-center gap-6 lg:ml-auto pl-12 lg:pl-0">
-                          <div className="shrink-0">
-                            <div className="text-[10px] font-black text-zinc-500 tracking-widest mb-1.5 uppercase text-left">
-                              Level Progress
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <div className="w-48 h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800/80 shadow-inner">
-                                <motion.div 
-                                  className="h-full bg-gradient-to-r from-blue-500 to-emerald-400 rounded-full"
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${getLevelProgress(level.start, level.end)}%` }}
-                                  transition={{ duration: 1, ease: "easeOut" }}
-                                />
+                        {(() => {
+                          const levelProg = getLevelProgress(level.start, level.end);
+                          return (
+                            <div className="flex flex-col sm:flex-row items-center gap-6 lg:ml-auto pl-12 lg:pl-0">
+                              <div className="shrink-0 text-left">
+                                <div className="text-[10px] font-black text-zinc-500 tracking-widest mb-1.5 uppercase text-left">
+                                  Level Progress
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  <div className="w-56 sm:w-64 h-3 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800 shadow-inner relative">
+                                    <motion.div 
+                                      className="h-full bg-gradient-to-r from-blue-500 to-emerald-400 rounded-full"
+                                      initial={{ width: 0 }}
+                                      animate={{ width: `${levelProg.percentage}%` }}
+                                      transition={{ duration: 1, ease: "easeOut" }}
+                                    />
+                                  </div>
+                                  <div className="flex flex-col text-left justify-center min-w-[80px]">
+                                    <span className="font-extrabold text-base text-emerald-400 leading-none">
+                                      {levelProg.percentage}%
+                                    </span>
+                                    <span className="text-[10px] text-zinc-500 font-bold mt-1 whitespace-nowrap">
+                                      {levelProg.completed}/{levelProg.total} Tasks
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
-                              <span className="font-bold text-sm text-emerald-400 w-10">
-                                {getLevelProgress(level.start, level.end)}%
-                              </span>
+                              
+                              <div className="hidden lg:flex shrink-0 px-6 py-3 bg-zinc-950/80 backdrop-blur-md rounded-2xl border border-zinc-800 text-zinc-400 font-medium items-center gap-3">
+                                {isCompleted && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                                Days {level.start} — {level.end}
+                              </div>
                             </div>
-                          </div>
-                          
-                          <div className="hidden lg:flex shrink-0 px-6 py-3 bg-zinc-950/80 backdrop-blur-md rounded-2xl border border-zinc-800 text-zinc-400 font-medium items-center gap-3">
-                            {isCompleted && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
-                            Days {level.start} — {level.end}
-                          </div>
-                        </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   </button>
@@ -376,7 +386,7 @@ export default function Home() {
 
                                 return (
                                   <div key={`lectures-day-${day.dayNumber}`} className="space-y-4 bg-zinc-900/30 p-5 pt-0 rounded-2xl border border-zinc-800/40">
-                                    <div className="flex items-center gap-4 sticky top-[75px] z-20 bg-zinc-950/95 backdrop-blur-xl py-4 -mx-5 px-5 border-b border-zinc-800/50 rounded-t-2xl shadow-sm">
+                                    <div className="flex items-center gap-4 py-4 -mx-5 px-5 border-b border-zinc-800/50 rounded-t-2xl shadow-sm bg-zinc-900/40">
                                       <span className="text-sm font-black text-blue-500/80 uppercase tracking-widest whitespace-nowrap">
                                         Day {day.dayNumber}
                                      </span>
@@ -427,7 +437,7 @@ export default function Home() {
 
                                 return (
                                   <div key={`problems-day-${day.dayNumber}`} className="space-y-4 bg-zinc-900/30 p-5 pt-0 rounded-2xl border border-zinc-800/40">
-                                    <div className="flex items-center gap-4 sticky top-[75px] z-20 bg-zinc-950/95 backdrop-blur-xl py-4 -mx-5 px-5 border-b border-zinc-800/50 rounded-t-2xl shadow-sm">
+                                    <div className="flex items-center gap-4 py-4 -mx-5 px-5 border-b border-zinc-800/50 rounded-t-2xl shadow-sm bg-zinc-900/40">
                                       <span className="text-sm font-black text-emerald-500/80 uppercase tracking-widest whitespace-nowrap">
                                         Day {day.dayNumber}
                                       </span>
