@@ -159,7 +159,7 @@ export default function Home() {
             <div key={collapseId} className="space-y-2">
               <button 
                 onClick={() => toggleCollapse(collapseId)}
-                className="flex items-center gap-2 px-3 h-[48px] py-0 w-full text-left group border-b border-zinc-800/50 rounded-none bg-zinc-950/90 backdrop-blur-md shadow-md sticky top-[244px] z-20"
+                className="flex items-center gap-2 px-4 h-[48px] py-0 -mx-4 w-[calc(100%+2rem)] text-left group border-b border-zinc-800/50 rounded-lg bg-zinc-950/90 backdrop-blur-md shadow-md sticky top-[244px] z-20"
               >
                 <ChevronDown 
                   className={`w-4 h-4 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`} 
@@ -412,7 +412,7 @@ export default function Home() {
                                   <div key={`lectures-day-${day.dayNumber}`} className="space-y-4 bg-zinc-900/30 p-5 pt-0 rounded-2xl border border-zinc-800/40">
                                     <button
                                       onClick={() => toggleCollapse(dayCollapseId)}
-                                      className="w-full flex items-center gap-4 h-[60px] py-0 px-4 border-b border-zinc-800/50 rounded-none shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
+                                      className="w-full flex items-center gap-4 h-[60px] py-0 -mx-5 px-5 border-b border-zinc-800/50 rounded-t-2xl shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
                                     >
                                       <ChevronDown 
                                         className={`w-5 h-5 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isDayCollapsed ? '-rotate-90' : 'rotate-0'}`} 
@@ -483,7 +483,7 @@ export default function Home() {
                                   <div key={`problems-day-${day.dayNumber}`} className="space-y-4 bg-zinc-900/30 p-5 pt-0 rounded-2xl border border-zinc-800/40">
                                     <button
                                       onClick={() => toggleCollapse(dayCollapseId)}
-                                      className="w-full flex items-center gap-4 h-[60px] py-0 px-4 border-b border-zinc-800/50 rounded-none shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
+                                      className="w-full flex items-center gap-4 h-[60px] py-0 -mx-5 px-5 border-b border-zinc-800/50 rounded-t-2xl shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
                                     >
                                       <ChevronDown 
                                         className={`w-5 h-5 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isDayCollapsed ? '-rotate-90' : 'rotate-0'}`} 
