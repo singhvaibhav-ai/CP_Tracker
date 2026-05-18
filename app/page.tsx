@@ -137,7 +137,7 @@ export default function Home() {
             <div key={collapseId} className="space-y-2">
               <button 
                 onClick={() => toggleCollapse(collapseId)}
-                className="flex items-center gap-2 px-3 py-2 -mx-3 w-[calc(100%+1.5rem)] text-left group border-b border-zinc-800/50 rounded-lg bg-zinc-950/80 backdrop-blur-md shadow-sm sticky top-[220px] z-20"
+                className="flex items-center gap-2 px-3 py-3.5 -mx-3 w-[calc(100%+1.5rem)] text-left group border-b border-zinc-800/50 rounded-lg bg-zinc-950/90 backdrop-blur-md shadow-md sticky top-[252px] z-20"
               >
                 <ChevronDown 
                   className={`w-4 h-4 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`} 
@@ -363,7 +363,7 @@ export default function Home() {
                           
                           {/* LECTURES COLUMN */}
                           <div className={`space-y-6 ${activeTab === 'problems' ? 'hidden md:block' : ''}`}>
-                            <div className="bg-zinc-950/80 backdrop-blur-md py-4 border-b border-zinc-800 flex items-center gap-3 sticky top-[112px] z-40">
+                            <div className="bg-zinc-950/90 backdrop-blur-md py-6 border-b border-zinc-800 flex items-center gap-3 sticky top-[112px] z-40 shadow-md">
                               <div className="p-2 bg-blue-500/20 rounded-lg">
                                 <Video className="w-5 h-5 text-blue-400" />
                               </div>
@@ -379,25 +379,44 @@ export default function Home() {
                                   </p>
                                 </div>
                               )}
-                              
-                              {daysInLevel.map((day) => {
+                                                        {daysInLevel.map((day) => {
                                 if (day.dayNumber > maxVisibleLectureDayIndex) return null;
                                 if (day.lectures.length === 0) return null;
 
+                                const dayCollapseId = `day-${day.dayNumber}-lectures`;
+                                const isDayCollapsed = collapsedItems.includes(dayCollapseId);
+
                                 return (
                                   <div key={`lectures-day-${day.dayNumber}`} className="space-y-4 bg-zinc-900/30 p-5 pt-0 rounded-2xl border border-zinc-800/40">
-                                    <div className="flex items-center gap-4 py-4 -mx-5 px-5 border-b border-zinc-800/50 rounded-t-2xl shadow-sm bg-zinc-950/80 backdrop-blur-md sticky top-[168px] z-30">
-                                      <span className="text-sm font-black text-blue-500/80 uppercase tracking-widest whitespace-nowrap">
+                                    <button
+                                      onClick={() => toggleCollapse(dayCollapseId)}
+                                      className="w-full flex items-center gap-4 py-5 -mx-5 px-5 border-b border-zinc-800/50 rounded-t-2xl shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[188px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
+                                    >
+                                      <ChevronDown 
+                                        className={`w-5 h-5 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isDayCollapsed ? '-rotate-90' : 'rotate-0'}`} 
+                                      />
+                                      <span className="text-sm font-black text-blue-500 tracking-[0.2em] uppercase whitespace-nowrap">
                                         Day {day.dayNumber}
-                                     </span>
+                                      </span>
                                       <div className="h-px flex-1 bg-zinc-800/80"></div>
                                       <span className="text-xs text-zinc-500 font-medium whitespace-nowrap">
                                         {format(day.date ? new Date(day.date) : addDays(START_DATE, day.dayNumber - 1), 'MMM do')}
                                       </span>
-                                    </div>
-                                    <div className="space-y-4 pb-2">
-                                      {renderTaskGroup(day.lectures, day.dayNumber, 'lectures')}
-                                    </div>
+                                    </button>
+                                    
+                                    <AnimatePresence initial={false}>
+                                      {!isDayCollapsed && (
+                                        <motion.div
+                                          initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                                          animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
+                                          exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                                          transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                          className="space-y-4 pb-2"
+                                        >
+                                          {renderTaskGroup(day.lectures, day.dayNumber, 'lectures')}
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
                                   </div>
                                 );
                               })}
@@ -414,7 +433,7 @@ export default function Home() {
 
                           {/* PROBLEMS COLUMN */}
                           <div className={`space-y-6 ${activeTab === 'lectures' ? 'hidden md:block' : ''}`}>
-                            <div className="bg-zinc-950/80 backdrop-blur-md py-4 border-b border-zinc-800 flex items-center gap-3 sticky top-[112px] z-40">
+                            <div className="bg-zinc-950/90 backdrop-blur-md py-6 border-b border-zinc-800 flex items-center gap-3 sticky top-[112px] z-40 shadow-md">
                               <div className="p-2 bg-emerald-500/20 rounded-lg">
                                 <Code className="w-5 h-5 text-emerald-400" />
                               </div>
@@ -435,20 +454,40 @@ export default function Home() {
                                 if (day.dayNumber > maxVisibleProblemDayIndex) return null;
                                 if (day.problems.length === 0) return null;
 
+                                const dayCollapseId = `day-${day.dayNumber}-problems`;
+                                const isDayCollapsed = collapsedItems.includes(dayCollapseId);
+
                                 return (
                                   <div key={`problems-day-${day.dayNumber}`} className="space-y-4 bg-zinc-900/30 p-5 pt-0 rounded-2xl border border-zinc-800/40">
-                                    <div className="flex items-center gap-4 py-4 -mx-5 px-5 border-b border-zinc-800/50 rounded-t-2xl shadow-sm bg-zinc-950/80 backdrop-blur-md sticky top-[168px] z-30">
-                                      <span className="text-sm font-black text-emerald-500/80 uppercase tracking-widest whitespace-nowrap">
+                                    <button
+                                      onClick={() => toggleCollapse(dayCollapseId)}
+                                      className="w-full flex items-center gap-4 py-5 -mx-5 px-5 border-b border-zinc-800/50 rounded-t-2xl shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[188px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
+                                    >
+                                      <ChevronDown 
+                                        className={`w-5 h-5 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isDayCollapsed ? '-rotate-90' : 'rotate-0'}`} 
+                                      />
+                                      <span className="text-sm font-black text-emerald-500 tracking-[0.2em] uppercase whitespace-nowrap">
                                         Day {day.dayNumber}
                                       </span>
                                       <div className="h-px flex-1 bg-zinc-800/80"></div>
                                       <span className="text-xs text-zinc-500 font-medium whitespace-nowrap">
                                         {format(day.date ? new Date(day.date) : addDays(START_DATE, day.dayNumber - 1), 'MMM do')}
                                       </span>
-                                    </div>
-                                    <div className="space-y-4 pb-2">
-                                      {renderTaskGroup(day.problems, day.dayNumber, 'problems')}
-                                    </div>
+                                    </button>
+                                    
+                                    <AnimatePresence initial={false}>
+                                      {!isDayCollapsed && (
+                                        <motion.div
+                                          initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                                          animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
+                                          exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                                          transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                          className="space-y-4 pb-2"
+                                        >
+                                          {renderTaskGroup(day.problems, day.dayNumber, 'problems')}
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
                                   </div>
                                 );
                               })}
