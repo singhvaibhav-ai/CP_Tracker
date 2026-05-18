@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { differenceInDays, startOfDay, format, addDays } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Target, Calendar as CalendarIcon, Zap, Video, Code, Lock, CheckCircle2, ChevronDown } from 'lucide-react';
+import { Target, Calendar as CalendarIcon, Zap, Video, Code, Lock, CheckCircle2, ChevronDown, Unlock } from 'lucide-react';
 import { Toaster } from 'sonner';
 import { useTrackerStore } from '../store/useTrackerStore';
 import DateStrip from '../components/DateStrip';
@@ -23,6 +23,10 @@ const END_DATE = new Date(2026, 6, 26); // July 26, 2026
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'lectures' | 'problems'>('lectures');
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  
   const courseDays = useTrackerStore((state) => state.courseDays);
   const getOverallProgress = useTrackerStore((state) => state.getOverallProgress);
   const isModuleComplete = useTrackerStore((state) => state.isModuleComplete);
@@ -30,6 +34,19 @@ export default function Home() {
   const collapsedItems = useTrackerStore((state) => state.collapsedItems);
   const toggleCollapse = useTrackerStore((state) => state.toggleCollapse);
   const initHydration = useTrackerStore((state) => state.initHydration);
+  const isAuthenticated = useTrackerStore((state) => state.isAuthenticated);
+  const login = useTrackerStore((state) => state.login);
+  const logout = useTrackerStore((state) => state.logout);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = await login(email, password);
+    if (success) {
+      setShowAuthModal(false);
+      setEmail('');
+      setPassword('');
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -431,6 +448,70 @@ export default function Home() {
 
         </div>
       </main>
+
+      {/* ADMIN AUTH BUTTON */}
+      <button 
+        onClick={() => isAuthenticated ? logout() : setShowAuthModal(true)}
+        className="fixed bottom-6 right-6 p-4 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-emerald-400 hover:border-emerald-500/30 transition-all shadow-xl z-50 group"
+      >
+        {isAuthenticated ? <Unlock className="w-5 h-5 text-emerald-500" /> : <Lock className="w-5 h-5 group-hover:scale-110 transition-transform" />}
+      </button>
+
+      {/* AUTH MODAL */}
+      <AnimatePresence>
+        {showAuthModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-zinc-950 border border-zinc-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl"
+            >
+              <h2 className="text-xl font-bold text-white mb-2">Owner Mode</h2>
+              <p className="text-zinc-500 text-sm mb-6">Log in to unlock progress tracking.</p>
+              
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <input 
+                    type="email" 
+                    placeholder="Email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/50"
+                    required
+                  />
+                </div>
+                <div>
+                  <input 
+                    type="password" 
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/50"
+                    required
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button 
+                    type="button"
+                    onClick={() => setShowAuthModal(false)}
+                    className="flex-1 py-3 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    className="flex-1 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition-colors font-bold"
+                  >
+                    Unlock
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

@@ -28,4 +28,7 @@ export interface TrackerStore {
   getOverallProgress: () => number;
   toggleCollapse: (id: string) => void;
   initHydration: () => Promise<void>;
+  isAuthenticated: boolean;
+  login: (email: string, pass: string) => Promise<boolean>;
+  logout: () => Promise<void>;
 }

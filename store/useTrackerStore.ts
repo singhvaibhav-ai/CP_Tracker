@@ -11,9 +11,32 @@ export const useTrackerStore = create<TrackerStore & {
       courseDays: INITIAL_TRACKER_DATA,
       dailyLogs: {},
       collapsedItems: [],
+      isAuthenticated: false,
+
+      login: async (email, password) => {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          toast.error(error.message);
+          return false;
+        }
+        set({ isAuthenticated: true });
+        toast.success("Owner Mode Unlocked!");
+        return true;
+      },
+
+      logout: async () => {
+        await supabase.auth.signOut();
+        set({ isAuthenticated: false });
+        toast.success("Locked. Visitor Mode Active.");
+      },
       
       initHydration: async () => {
         try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            set({ isAuthenticated: true });
+          }
+
           const { data, error } = await supabase.from('user_progress').select('task_id, is_completed');
           if (error) throw error;
 
@@ -48,6 +71,11 @@ export const useTrackerStore = create<TrackerStore & {
       }),
       
       toggleTask: (dayNumber, taskId, type) => {
+        if (!get().isAuthenticated) {
+          toast.error("Visitor Mode: Progress is Read-Only.");
+          return;
+        }
+
         let wasCompleted = false;
         let isCompleted = false;
 

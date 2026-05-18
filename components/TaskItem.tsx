@@ -17,6 +17,7 @@ interface TaskItemProps {
 
 export default function TaskItem({ dayNumber, type, task }: TaskItemProps) {
   const toggleTask = useTrackerStore((state) => state.toggleTask);
+  const isAuthenticated = useTrackerStore((state) => state.isAuthenticated);
 
   const Icon = task.type === 'Video' ? Video : Code;
 
@@ -24,10 +25,11 @@ export default function TaskItem({ dayNumber, type, task }: TaskItemProps) {
     <div
       onClick={() => toggleTask(dayNumber, task.id, type)}
       className={cn(
-        "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors duration-200 group border border-transparent",
+        "flex items-center gap-3 p-3 rounded-lg transition-colors duration-200 group border border-transparent",
+        isAuthenticated ? "cursor-pointer" : "cursor-not-allowed opacity-90",
         task.isCompleted
           ? "bg-emerald-900/20 border-emerald-900/30"
-          : "hover:bg-zinc-800/50 hover:border-zinc-700/50"
+          : isAuthenticated ? "hover:bg-zinc-800/50 hover:border-zinc-700/50" : "bg-zinc-900/50"
       )}
     >
       <motion.div
