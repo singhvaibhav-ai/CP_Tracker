@@ -599,7 +599,7 @@ export default function Home() {
       <Toaster position="bottom-right" theme="dark" />
       <DateStrip />
 
-      <main className="max-w-7xl mx-auto px-4 py-8 md:py-12 space-y-16 pb-32">
+      <main className="max-w-7xl mx-auto px-4 pt-4 space-y-8 pb-32">
         {/* Dashboard Header */}
         <header className="space-y-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -668,6 +668,99 @@ export default function Home() {
               </div>
             </div>
           </div>
+
+          {/* --- FINAL DATA-DENSE ROADMAP OVERVIEW GRID (WITH LIVE FRACTIONS) --- */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              {
+                name: 'LEVEL 1', dates: 'May 18 - May 21', days: 4,
+                vids: 25, probs: 125, vPace: 6, pPace: 31,
+                focus: 'C++ • Math for CP • Time & Space • Search & Sort • STL & Strings • Debugging',
+                start: 1, end: 4, color: 'from-blue-500/20 to-blue-500/5', border: 'border-blue-500/20', text: 'text-blue-400', bar: 'bg-blue-500'
+              },
+              {
+                name: 'LEVEL 2', dates: 'May 22 - Jun 5', days: 15,
+                vids: 30, probs: 126, vPace: 2, pPace: 8,
+                focus: 'Prefix Sums • Bit Manipulation • Adhoc • Recursion • Backtracking • Number Theory • Stacks & Queues • Adv Sorting',
+                start: 5, end: 19, color: 'from-emerald-500/20 to-emerald-500/5', border: 'border-emerald-500/20', text: 'text-emerald-400', bar: 'bg-emerald-500'
+              },
+              {
+                name: 'LEVEL 3', dates: 'Jun 6 - Jun 25', days: 20,
+                vids: 28, probs: 142, vPace: 1.5, pPace: 7,
+                focus: 'Adv Binary Search • Interactive Problems • 2 Pointers • Combinatorics • Greedy • Hashing • Tries',
+                start: 20, end: 39, color: 'from-amber-500/20 to-amber-500/5', border: 'border-amber-500/20', text: 'text-amber-400', bar: 'bg-amber-500'
+              },
+              {
+                name: 'LEVEL 4', dates: 'Jun 26 - Jul 26', days: 31,
+                vids: 34, probs: 151, vPace: 1, pPace: 5,
+                focus: 'Dynamic Programming • Generic Trees • Graphs • DSU • Segment Trees • Sparse Tables',
+                start: 40, end: 70, color: 'from-red-500/20 to-red-500/5', border: 'border-red-500/20', text: 'text-red-400', bar: 'bg-red-500'
+              },
+            ].map((lvl, i) => {
+              const prog = getLevelProgress(lvl.start, lvl.end);
+
+              // Calculate completed items for this specific level
+              const levelDays = courseDays.filter(d => d.dayNumber >= lvl.start && d.dayNumber <= lvl.end);
+              let completedVids = 0;
+              let completedProbs = 0;
+              levelDays.forEach(day => {
+                completedVids += day.lectures.filter(t => t.isCompleted).length;
+                completedProbs += day.problems.filter(t => t.isCompleted).length;
+              });
+
+              return (
+                <div key={i} className={`bg-gradient-to-br ${lvl.color} border ${lvl.border} rounded-2xl p-5 flex flex-col justify-between shadow-lg backdrop-blur-sm relative overflow-hidden h-full min-h-[220px]`}>
+
+                  {/* Header: Level Name Large */}
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <div className={`text-xl font-black tracking-tight ${lvl.text}`}>{lvl.name}</div>
+                      <div className="text-[10px] text-zinc-500 font-bold tracking-wide uppercase mt-1">
+                        {lvl.dates} <span className="text-zinc-700 mx-1">•</span> <span className="text-zinc-300">{lvl.days} Days</span>
+                      </div>
+                    </div>
+                    <div className={`text-sm font-black px-2 py-0.5 rounded-full bg-zinc-950/50 border border-zinc-800 ${lvl.text}`}>
+                      {prog.percentage}%
+                    </div>
+                  </div>
+
+                  {/* Statistics with Live Fractions */}
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center text-xs">
+                      <Video className={`w-3.5 h-3.5 ${lvl.text} opacity-80 mr-2.5 shrink-0`} />
+                      <div className="flex items-center w-14">
+                        <span className={`${completedVids > 0 ? lvl.text : 'text-zinc-500'} font-black`}>{completedVids}</span>
+                        <span className="text-zinc-600 mx-0.5">/</span>
+                        <span className="text-zinc-200 font-bold">{lvl.vids}</span>
+                      </div>
+                      <span className="text-zinc-600 mx-1.5">|</span>
+                      <span className="text-zinc-400 font-medium tracking-tight">~{lvl.vPace} / day</span>
+                    </div>
+                    <div className="flex items-center text-xs">
+                      <Code className={`w-3.5 h-3.5 ${lvl.text} opacity-80 mr-2.5 shrink-0`} />
+                      <div className="flex items-center w-14">
+                        <span className={`${completedProbs > 0 ? lvl.text : 'text-zinc-500'} font-black`}>{completedProbs}</span>
+                        <span className="text-zinc-600 mx-0.5">/</span>
+                        <span className="text-zinc-200 font-bold">{lvl.probs}</span>
+                      </div>
+                      <span className="text-zinc-600 mx-1.5">|</span>
+                      <span className="text-zinc-400 font-medium tracking-tight">~{lvl.pPace} / day</span>
+                    </div>
+                  </div>
+
+                  {/* Complete Syllabus from Screenshots */}
+                  <div className="text-[10px] text-zinc-500 font-medium leading-relaxed uppercase tracking-wider pb-2">
+                    {lvl.focus}
+                  </div>
+
+                  {/* Bottom Visual Progress Line */}
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-zinc-900/50">
+                    <div className={`h-full ${lvl.bar} transition-all duration-1000 ease-out`} style={{ width: `${prog.percentage}%` }}></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </header>
 
         {/* Level Grouping and Grids */}
@@ -690,7 +783,7 @@ export default function Home() {
                   key={levelId}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="space-y-8"
+                  className="space-y-4"
                 >
                   {/* LEVEL BANNER */}
                   <button
@@ -698,7 +791,7 @@ export default function Home() {
                     className="w-full text-left relative overflow-hidden rounded-3xl bg-gradient-to-r from-zinc-900 to-zinc-950 border border-zinc-800 shadow-2xl group transition-all hover:border-zinc-700"
                   >
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 group-hover:opacity-30 transition-opacity"></div>
-                    <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="relative z-10 p-5 md:p-7 flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 w-full text-left">
                         <div className="space-y-2">
                           <div className="flex items-center gap-4">
@@ -710,7 +803,7 @@ export default function Home() {
                             </div>
                           </div>
                           <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight flex items-center gap-4 pl-12">
-                            🏆 {level.name}
+                            {level.name}
                           </h2>
                         </div>
 
@@ -779,7 +872,7 @@ export default function Home() {
                           </button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12 relative items-start pt-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12 relative items-start pt-2">
 
                           {/* LECTURES COLUMN */}
                           <div className={`space-y-6 ${activeTab === 'problems' ? 'hidden md:block' : ''}`}>
