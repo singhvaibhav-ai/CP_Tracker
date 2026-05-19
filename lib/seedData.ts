@@ -796,7 +796,7 @@ function generateSeedData(): CourseDay[] {
       if (match) currentLevel = parseInt(match[0], 10);
       continue;
     }
-    
+
     if (line.toLowerCase().startsWith('module-')) {
       currentModuleFullName = line;
       // Extract the module number
@@ -855,7 +855,7 @@ function generateSeedData(): CourseDay[] {
     // It's a problem
     if (line && !line.toLowerCase().startsWith('this ')) {
       let currentLineToProcess = line;
-      
+
       const bonusMatch = currentLineToProcess.match(/and (\d+) bonus problems?/i);
       let bonusCount = 0;
       if (bonusMatch) {
@@ -891,9 +891,9 @@ function generateSeedData(): CourseDay[] {
 
       if (bonusCount > 0) {
         for (let i = 1; i <= bonusCount; i++) {
-          levelsData[`l${currentLevel}`].problems.push({ 
-            title: `Bonus Problem ${i}`, 
-            moduleName: currentModuleFullName 
+          levelsData[`l${currentLevel}`].problems.push({
+            title: `Bonus Problem ${i}`,
+            moduleName: currentModuleFullName
           });
         }
       }
@@ -910,6 +910,8 @@ function generateSeedData(): CourseDay[] {
 
   const courseDays: CourseDay[] = [];
   let taskIdCounter = 1;
+  let globalLectureCounter = 1; // Added global counter for Lectures
+  let globalProblemCounter = 1; // Added global counter for Problems
 
   function distribute<T>(items: T[], numDays: number): T[][] {
     if (numDays === 0) return [];
@@ -936,16 +938,15 @@ function generateSeedData(): CourseDay[] {
     const vidChunks = distribute(videos, numDays);
     const probChunks = distribute(problems, numDays);
 
-    let levelLecturesCounter = 1;
-    let levelProblemsCounter = 1;
+    // Removed the resetting counters from here!
 
     for (let idx = 0; idx < daysForLevel.length; idx++) {
       const dayNum = daysForLevel[idx];
       const vChunk = vidChunks[idx] || [];
       const pChunk = probChunks[idx] || [];
-      
+
       const dateObj = addDays(START_DATE, dayNum - 1);
-      
+
       const dayObj: CourseDay = {
         dayNumber: dayNum,
         date: format(dateObj, 'yyyy-MM-dd'),
@@ -954,9 +955,12 @@ function generateSeedData(): CourseDay[] {
       };
 
       for (const v of vChunk) {
+        // Create the padded string (e.g., "001", "045", "120")
+        const numStr = String(globalLectureCounter++).padStart(3, '0');
+
         dayObj.lectures.push({
           id: `t${taskIdCounter++}`,
-          title: `${levelLecturesCounter++}. ${v.title}`,
+          title: `#${numStr}: ${v.title}`,
           type: "Video",
           isCompleted: false,
           moduleName: v.moduleName
@@ -964,9 +968,12 @@ function generateSeedData(): CourseDay[] {
       }
 
       for (const p of pChunk) {
+        // Create the padded string for problems
+        const numStr = String(globalProblemCounter++).padStart(3, '0');
+
         dayObj.problems.push({
           id: `t${taskIdCounter++}`,
-          title: `${levelProblemsCounter++}. ${p.title}`,
+          title: `#${numStr}: ${p.title}`,
           type: "Problem",
           isCompleted: false,
           moduleName: p.moduleName

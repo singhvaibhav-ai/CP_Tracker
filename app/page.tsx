@@ -59,7 +59,7 @@ export default function Home() {
       localStorage.setItem('theme', 'dark');
     }
   };
-  
+
   const courseDays = useTrackerStore((state) => state.courseDays);
   const getOverallProgress = useTrackerStore((state) => state.getOverallProgress);
   const getLevelProgress = useTrackerStore((state) => state.getLevelProgress);
@@ -100,7 +100,7 @@ export default function Home() {
   // GAMIFIED UNLOCK LOGIC - INDEPENDENT TRACKS
   let baseRealWorldDayIndex = differenceInDays(today, START_DATE) + 1;
   if (baseRealWorldDayIndex < 1) baseRealWorldDayIndex = 1; // Before start date
-  
+
   let maxVisibleLectureDayIndex = baseRealWorldDayIndex;
   let maxVisibleProblemDayIndex = baseRealWorldDayIndex;
 
@@ -108,7 +108,7 @@ export default function Home() {
   while (maxVisibleLectureDayIndex <= 70) {
     const dayToCheck = courseDays[maxVisibleLectureDayIndex - 1];
     if (!dayToCheck) break;
-    
+
     // Only check lectures
     const isComplete = dayToCheck.lectures.length === 0 || dayToCheck.lectures.every(t => t.isCompleted);
     if (isComplete && dayToCheck.lectures.length > 0) {
@@ -122,7 +122,7 @@ export default function Home() {
   while (maxVisibleProblemDayIndex <= 70) {
     const dayToCheck = courseDays[maxVisibleProblemDayIndex - 1];
     if (!dayToCheck) break;
-    
+
     // Only check problems
     const isComplete = dayToCheck.problems.length === 0 || dayToCheck.problems.every(t => t.isCompleted);
     if (isComplete && dayToCheck.problems.length > 0) {
@@ -165,7 +165,7 @@ export default function Home() {
 
           return (
             <div key={moduleName} className="bg-zinc-950/40 border border-zinc-900/60 rounded-xl mb-3 flex flex-col overflow-visible">
-              
+
               {/* MODULE HEADER */}
               <div className="sticky top-[244px] z-20 bg-zinc-950/95 backdrop-blur-xl border-b border-zinc-900/60 px-3 py-2 flex items-center justify-between rounded-t-xl">
                 <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
@@ -179,12 +179,12 @@ export default function Home() {
               {/* TASKS CONTAINER */}
               <div className="flex flex-col space-y-1.5 p-2 bg-transparent">
                 {moduleTasks.map(task => (
-                  <TaskItem 
-                    key={task.id} 
-                    dayNumber={task.dayNumber} 
-                    type={type} 
-                    task={task} 
-                    disabled={disabled} 
+                  <TaskItem
+                    key={task.id}
+                    dayNumber={task.dayNumber}
+                    type={type}
+                    task={task}
+                    disabled={disabled}
                   />
                 ))}
               </div>
@@ -212,13 +212,13 @@ export default function Home() {
 
     // 2. Today's Completed: Tasks assigned to Today where isCompleted === true
     const todayDayData = courseDays[dayNumber - 1];
-    const todayCompleted = todayDayData 
-      ? todayDayData[type].filter(t => t.isCompleted).map(t => ({ ...t, dayNumber })) 
+    const todayCompleted = todayDayData
+      ? todayDayData[type].filter(t => t.isCompleted).map(t => ({ ...t, dayNumber }))
       : [];
 
     // 3. Today's Pending: Tasks assigned to Today where isCompleted === false
-    const todayPending = todayDayData 
-      ? todayDayData[type].filter(t => !t.isCompleted).map(t => ({ ...t, dayNumber })) 
+    const todayPending = todayDayData
+      ? todayDayData[type].filter(t => !t.isCompleted).map(t => ({ ...t, dayNumber }))
       : [];
 
     // 4. Additional Tasks: Tasks assigned to Tomorrow or beyond where isCompleted === true AND updatedAt matches Today
@@ -250,7 +250,7 @@ export default function Home() {
     return (
       <div className="space-y-4 pt-4">
         {/* BACKLOGS */}
-        <div 
+        <div
           style={{ overflow: todaySectionsCollapsed[backlogKey] ? 'hidden' : 'visible' }}
           className="border border-red-500/20 bg-red-950/5 rounded-xl shadow-sm transition-all duration-300"
         >
@@ -278,7 +278,7 @@ export default function Home() {
         </div>
 
         {/* COMPLETED TODAY */}
-        <div 
+        <div
           style={{ overflow: todaySectionsCollapsed[completedKey] ? 'hidden' : 'visible' }}
           className="border border-emerald-500/20 bg-emerald-950/5 rounded-xl shadow-sm transition-all duration-300"
         >
@@ -306,7 +306,7 @@ export default function Home() {
         </div>
 
         {/* PENDING TODAY */}
-        <div 
+        <div
           style={{ overflow: todaySectionsCollapsed[pendingKey] ? 'hidden' : 'visible' }}
           className="border border-blue-500/20 bg-blue-950/5 rounded-xl shadow-sm transition-all duration-300"
         >
@@ -334,7 +334,7 @@ export default function Home() {
         </div>
 
         {/* ADDITIONAL TASKS */}
-        <div 
+        <div
           style={{ overflow: todaySectionsCollapsed[additionalKey] ? 'hidden' : 'visible' }}
           className="border border-purple-500/20 bg-purple-950/5 rounded-xl shadow-sm transition-all duration-300"
         >
@@ -365,8 +365,26 @@ export default function Home() {
   };
 
   const renderPastDay = (day: CourseDay, type: 'lectures' | 'problems') => {
-    const completed = day[type].filter(t => t.isCompleted).map(t => ({ ...t, dayNumber: day.dayNumber }));
-    const incompleted = day[type].filter(t => !t.isCompleted).map(t => ({ ...t, dayNumber: day.dayNumber }));
+    // 1. Helper functions to check WHEN it was completed
+    const isCompletedOnTime = (t: Task) => {
+      if (!t.isCompleted) return false;
+      if (!t.updatedAt) return true; // Legacy tasks without dates count as on-time
+      const taskDate = t.updatedAt.split('T')[0];
+      return taskDate <= day.date; // Completed on or before this day
+    };
+
+    const isCompletedLate = (t: Task) => {
+      if (!t.isCompleted) return false;
+      if (!t.updatedAt) return false;
+      const taskDate = t.updatedAt.split('T')[0];
+      return taskDate > day.date; // Completed AFTER this day ended
+    };
+
+    // 2. Filter the buckets
+    const completed = day[type].filter(isCompletedOnTime).map(t => ({ ...t, dayNumber: day.dayNumber }));
+
+    // If it's incomplete OR if it was completed late, it belongs in this past day's "Incompleted" bucket
+    const incompleted = day[type].filter(t => !t.isCompleted || isCompletedLate(t)).map(t => ({ ...t, dayNumber: day.dayNumber }));
 
     // Historical Additional Tasks: completed tasks on days d > day.dayNumber where updatedAt matches day.date
     const pastDayDateStr = day.date;
@@ -420,7 +438,7 @@ export default function Home() {
       <div className="space-y-4 pt-4">
         {/* COMPLETED */}
         {completed.length > 0 && (
-          <div 
+          <div
             style={{ overflow: isCompletedCollapsed ? 'hidden' : 'visible' }}
             className="border border-emerald-500/20 bg-emerald-950/5 rounded-xl shadow-sm transition-all duration-300"
           >
@@ -446,7 +464,7 @@ export default function Home() {
                   style={{ overflow: isCompletedCollapsed ? 'hidden' : 'visible' }}
                   className="p-3 space-y-2"
                 >
-                  {renderTasksWithModules(completed, type, false)}
+                  {renderTasksWithModules(completed, type, true)}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -455,7 +473,7 @@ export default function Home() {
 
         {/* ADDITIONAL TASKS COMPLETED */}
         {additional.length > 0 && (
-          <div 
+          <div
             style={{ overflow: isAdditionalCollapsed ? 'hidden' : 'visible' }}
             className="border border-purple-500/20 bg-purple-950/5 rounded-xl shadow-sm transition-all duration-300"
           >
@@ -482,7 +500,7 @@ export default function Home() {
                   style={{ overflow: isAdditionalCollapsed ? 'hidden' : 'visible' }}
                   className="p-3 space-y-2"
                 >
-                  {renderTasksWithModules(additional, type, false)}
+                  {renderTasksWithModules(additional, type, true)}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -491,7 +509,7 @@ export default function Home() {
 
         {/* BACKLOGS CLEARED */}
         {backlogsCleared.length > 0 && (
-          <div 
+          <div
             style={{ overflow: isBacklogsClearedCollapsed ? 'hidden' : 'visible' }}
             className="border border-indigo-500/20 bg-indigo-950/5 rounded-xl shadow-sm transition-all duration-300"
           >
@@ -518,7 +536,7 @@ export default function Home() {
                   style={{ overflow: isBacklogsClearedCollapsed ? 'hidden' : 'visible' }}
                   className="p-3 space-y-2"
                 >
-                  {renderTasksWithModules(backlogsCleared, type, false)}
+                  {renderTasksWithModules(backlogsCleared, type, true)}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -527,7 +545,7 @@ export default function Home() {
 
         {/* INCOMPLETED (LOCKED) */}
         {incompleted.length > 0 && (
-          <div 
+          <div
             style={{ overflow: isIncompletedCollapsed ? 'hidden' : 'visible' }}
             className="border border-red-500/20 bg-red-950/5 rounded-xl shadow-sm transition-all duration-300"
           >
@@ -626,7 +644,7 @@ export default function Home() {
             <div className="absolute top-0 right-0 p-8 opacity-5">
               <Zap className="w-48 h-48" />
             </div>
-            
+
             <div className="relative z-10 space-y-6">
               <div className="flex justify-between items-end">
                 <div>
@@ -668,14 +686,14 @@ export default function Home() {
               const isCompleted = isLevelComplete(level.start, level.end);
 
               return (
-                <motion.section 
+                <motion.section
                   key={levelId}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="space-y-8"
                 >
                   {/* LEVEL BANNER */}
-                  <button 
+                  <button
                     onClick={() => toggleCollapse(levelId)}
                     className="w-full text-left relative overflow-hidden rounded-3xl bg-gradient-to-r from-zinc-900 to-zinc-950 border border-zinc-800 shadow-2xl group transition-all hover:border-zinc-700"
                   >
@@ -684,8 +702,8 @@ export default function Home() {
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 w-full text-left">
                         <div className="space-y-2">
                           <div className="flex items-center gap-4">
-                            <ChevronDown 
-                              className={`w-8 h-8 text-zinc-500 transition-transform duration-500 group-hover:text-zinc-400 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`} 
+                            <ChevronDown
+                              className={`w-8 h-8 text-zinc-500 transition-transform duration-500 group-hover:text-zinc-400 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}
                             />
                             <div className="text-emerald-500 font-bold tracking-[0.2em] uppercase text-sm">
                               {level.dates}
@@ -695,7 +713,7 @@ export default function Home() {
                             🏆 {level.name}
                           </h2>
                         </div>
-                        
+
                         {/* LEVEL PROGRESS BAR */}
                         {(() => {
                           const levelProg = getLevelProgress(level.start, level.end);
@@ -707,7 +725,7 @@ export default function Home() {
                                 </div>
                                 <div className="flex items-center gap-4">
                                   <div className="w-56 sm:w-64 h-3 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800 shadow-inner relative">
-                                    <motion.div 
+                                    <motion.div
                                       className="h-full bg-gradient-to-r from-blue-500 to-emerald-400 rounded-full"
                                       initial={{ width: 0 }}
                                       animate={{ width: `${levelProg.percentage}%` }}
@@ -724,7 +742,7 @@ export default function Home() {
                                   </div>
                                 </div>
                               </div>
-                              
+
                               <div className="hidden lg:flex shrink-0 px-6 py-3 bg-zinc-950/80 backdrop-blur-md rounded-2xl border border-zinc-800 text-zinc-400 font-medium items-center gap-3">
                                 {isCompleted && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
                                 Days {level.start} — {level.end}
@@ -747,13 +765,13 @@ export default function Home() {
                         style={{ overflow: isCollapsed ? 'hidden' : 'visible' }}
                       >
                         <div className="md:hidden flex p-1 bg-zinc-900 border border-zinc-800 rounded-xl mt-6">
-                          <button 
+                          <button
                             onClick={() => setActiveTab('lectures')}
                             className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors ${activeTab === 'lectures' ? 'bg-zinc-800 text-blue-400' : 'text-zinc-500 hover:text-zinc-400'}`}
                           >
                             Lectures
                           </button>
-                          <button 
+                          <button
                             onClick={() => setActiveTab('problems')}
                             className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors ${activeTab === 'problems' ? 'bg-zinc-800 text-emerald-400' : 'text-zinc-500 hover:text-zinc-400'}`}
                           >
@@ -762,7 +780,7 @@ export default function Home() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12 relative items-start pt-6">
-                          
+
                           {/* LECTURES COLUMN */}
                           <div className={`space-y-6 ${activeTab === 'problems' ? 'hidden md:block' : ''}`}>
                             <div className="bg-zinc-950/90 backdrop-blur-md h-[72px] py-0 border-b border-zinc-800 flex items-center gap-3 sticky top-[112px] z-40 shadow-md">
@@ -771,13 +789,13 @@ export default function Home() {
                               </div>
                               <h3 className="text-xl font-bold text-white uppercase tracking-wider">Lectures</h3>
                             </div>
-                            
+
                             <div className="space-y-0 pb-8">
                               {maxVisibleLectureDayIndex < level.start && (
                                 <div className="flex flex-col items-center justify-center py-12 opacity-50 space-y-4 bg-zinc-900/20 rounded-2xl border border-zinc-800/30 border-dashed">
                                   <Lock className="w-8 h-8 text-zinc-600" />
                                   <p className="text-zinc-500 font-medium uppercase tracking-widest text-xs text-center">
-                                    Level Locked<br/>Complete Day {level.start - 1} Lectures
+                                    Level Locked<br />Complete Day {level.start - 1} Lectures
                                   </p>
                                 </div>
                               )}
@@ -791,18 +809,17 @@ export default function Home() {
                                   : (day.dayNumber === baseRealWorldDayIndex ? false : true);
 
                                 return (
-                                  <div 
-                                    key={`lectures-day-${day.dayNumber}`} 
-                                    className={`bg-zinc-900/30 px-5 pt-0 pb-0 rounded-2xl border border-zinc-800/40 transition-all duration-300 ${
-                                      isDayCollapsed ? 'overflow-hidden mb-0' : 'overflow-visible mb-6'
-                                    }`}
+                                  <div
+                                    key={`lectures-day-${day.dayNumber}`}
+                                    className={`bg-zinc-900/30 px-5 pt-0 pb-0 rounded-2xl border border-zinc-800/40 transition-all duration-300 ${isDayCollapsed ? 'overflow-hidden mb-0' : 'overflow-visible mb-6'
+                                      }`}
                                   >
                                     <button
                                       onClick={() => toggleCollapse(dayCollapseId)}
                                       className="flex items-center gap-4 h-[60px] py-0 -mx-5 px-5 w-[calc(100%+2.5rem)] border-b border-zinc-800/50 rounded-t-2xl rounded-b-none shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
                                     >
-                                      <ChevronDown 
-                                        className={`w-5 h-5 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isDayCollapsed ? '-rotate-90' : 'rotate-0'}`} 
+                                      <ChevronDown
+                                        className={`w-5 h-5 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isDayCollapsed ? '-rotate-90' : 'rotate-0'}`}
                                       />
                                       <span className="text-sm font-black text-blue-500 tracking-[0.2em] uppercase whitespace-nowrap">
                                         Day {day.dayNumber}
@@ -817,7 +834,7 @@ export default function Home() {
                                         {format(day.date ? new Date(day.date) : addDays(START_DATE, day.dayNumber - 1), 'MMM do')}
                                       </span>
                                     </button>
-                                    
+
                                     <AnimatePresence initial={false}>
                                       {!isDayCollapsed && (
                                         <motion.div
@@ -860,13 +877,13 @@ export default function Home() {
                               </div>
                               <h3 className="text-xl font-bold text-white uppercase tracking-wider">Practice Problems</h3>
                             </div>
-                            
+
                             <div className="space-y-0 pb-8">
                               {maxVisibleProblemDayIndex < level.start && (
                                 <div className="flex flex-col items-center justify-center py-12 opacity-50 space-y-4 bg-zinc-900/20 rounded-2xl border border-zinc-800/30 border-dashed">
                                   <Lock className="w-8 h-8 text-zinc-600" />
                                   <p className="text-zinc-500 font-medium uppercase tracking-widest text-xs text-center">
-                                    Level Locked<br/>Complete Day {level.start - 1} Problems
+                                    Level Locked<br />Complete Day {level.start - 1} Problems
                                   </p>
                                 </div>
                               )}
@@ -881,18 +898,17 @@ export default function Home() {
                                   : (day.dayNumber === baseRealWorldDayIndex ? false : true);
 
                                 return (
-                                  <div 
-                                    key={`problems-day-${day.dayNumber}`} 
-                                    className={`bg-zinc-900/30 px-5 pt-0 pb-0 rounded-2xl border border-zinc-800/40 transition-all duration-300 ${
-                                      isDayCollapsed ? 'overflow-hidden mb-0' : 'overflow-visible mb-6'
-                                    }`}
+                                  <div
+                                    key={`problems-day-${day.dayNumber}`}
+                                    className={`bg-zinc-900/30 px-5 pt-0 pb-0 rounded-2xl border border-zinc-800/40 transition-all duration-300 ${isDayCollapsed ? 'overflow-hidden mb-0' : 'overflow-visible mb-6'
+                                      }`}
                                   >
                                     <button
                                       onClick={() => toggleCollapse(dayCollapseId)}
                                       className="flex items-center gap-4 h-[60px] py-0 -mx-5 px-5 w-[calc(100%+2.5rem)] border-b border-zinc-800/50 rounded-t-2xl rounded-b-none shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
                                     >
-                                      <ChevronDown 
-                                        className={`w-5 h-5 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isDayCollapsed ? '-rotate-90' : 'rotate-0'}`} 
+                                      <ChevronDown
+                                        className={`w-5 h-5 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isDayCollapsed ? '-rotate-90' : 'rotate-0'}`}
                                       />
                                       <span className="text-sm font-black text-emerald-500 tracking-[0.2em] uppercase whitespace-nowrap">
                                         Day {day.dayNumber}
@@ -907,7 +923,7 @@ export default function Home() {
                                         {format(day.date ? new Date(day.date) : addDays(START_DATE, day.dayNumber - 1), 'MMM do')}
                                       </span>
                                     </button>
-                                    
+
                                     <AnimatePresence initial={false}>
                                       {!isDayCollapsed && (
                                         <motion.div
@@ -969,7 +985,7 @@ export default function Home() {
       </main>
 
       {/* THEME TOGGLE BUTTON */}
-      <button 
+      <button
         onClick={toggleTheme}
         className="fixed bottom-[88px] right-6 p-4 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-amber-400 hover:border-amber-500/30 transition-all shadow-xl z-50 group"
         title="Toggle Theme"
@@ -978,7 +994,7 @@ export default function Home() {
       </button>
 
       {/* ADMIN AUTH BUTTON */}
-      <button 
+      <button
         onClick={() => isAuthenticated ? logout() : setShowAuthModal(true)}
         className="fixed bottom-6 right-6 p-4 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-emerald-400 hover:border-emerald-500/30 transition-all shadow-xl z-50 group"
         title="Owner Mode"
@@ -990,7 +1006,7 @@ export default function Home() {
       <AnimatePresence>
         {showAuthModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -998,11 +1014,11 @@ export default function Home() {
             >
               <h2 className="text-xl font-bold text-white mb-2">Owner Mode</h2>
               <p className="text-zinc-500 text-sm mb-6">Log in to unlock progress tracking.</p>
-              
+
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <input 
-                    type="email" 
+                  <input
+                    type="email"
                     placeholder="Email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -1011,8 +1027,8 @@ export default function Home() {
                   />
                 </div>
                 <div>
-                  <input 
-                    type="password" 
+                  <input
+                    type="password"
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -1021,14 +1037,14 @@ export default function Home() {
                   />
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setShowAuthModal(false)}
                     className="flex-1 py-3 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors font-medium"
                   >
                     Cancel
                   </button>
-                  <button 
+                  <button
                     type="submit"
                     className="flex-1 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition-colors font-bold"
                   >

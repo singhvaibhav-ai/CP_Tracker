@@ -22,11 +22,15 @@ export default function TaskItem({ dayNumber, type, task, disabled }: TaskItemPr
   const isAuthenticated = useTrackerStore((state) => state.isAuthenticated);
 
   const Icon = task.type === 'Video' ? Video : Code;
-  const isActuallyDisabled = disabled && !task.isCompleted;
+  const isActuallyDisabled = disabled;
 
   const handleClick = () => {
     if (isActuallyDisabled) {
-      toast.error("This is an incomplete historical task! You can only complete it from Today's Backlog.");
+      if (task.isCompleted) {
+        toast.error("Locked in history! You cannot uncheck past victories.");
+      } else {
+        toast.error("This is an incomplete historical task! You can only complete it from Today's Backlog.");
+      }
       return;
     }
     toggleTask(dayNumber, task.id, type);
@@ -37,7 +41,7 @@ export default function TaskItem({ dayNumber, type, task, disabled }: TaskItemPr
       onClick={handleClick}
       className={cn(
         "flex items-center gap-3 p-3 rounded-lg transition-colors duration-200 group border border-transparent",
-        isActuallyDisabled 
+        isActuallyDisabled
           ? "cursor-not-allowed opacity-50 bg-zinc-950/40 border-zinc-900/50"
           : isAuthenticated ? "cursor-pointer" : "cursor-not-allowed opacity-90",
         task.isCompleted
@@ -51,14 +55,19 @@ export default function TaskItem({ dayNumber, type, task, disabled }: TaskItemPr
         transition={{ duration: 0.3 }}
       >
         {task.isCompleted ? (
-          <CheckCircle2 className="w-6 h-6 text-emerald-500 flex-shrink-0" />
+          <div className="relative">
+            <CheckCircle2 className="w-6 h-6 text-emerald-500 flex-shrink-0" />
+            {isActuallyDisabled && (
+              <Lock className="w-3 h-3 text-zinc-900 absolute -bottom-1 -right-1 bg-emerald-500 rounded-full p-[2px]" />
+            )}
+          </div>
         ) : isActuallyDisabled ? (
           <Lock className="w-6 h-6 text-zinc-600 flex-shrink-0" />
         ) : (
           <Circle className="w-6 h-6 text-zinc-500 group-hover:text-zinc-400 flex-shrink-0" />
         )}
       </motion.div>
-      
+
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <Icon className={cn("w-4 h-4 flex-shrink-0", task.isCompleted ? "text-emerald-500/50" : "text-zinc-500")} />
         <span
