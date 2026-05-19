@@ -164,10 +164,10 @@ export default function Home() {
           const isModuleComplete = moduleTasks.length > 0 && moduleTasks.every(t => t.isCompleted);
 
           return (
-            <div key={moduleName} className="bg-zinc-950/40 border border-zinc-900/60 rounded-xl mb-3 flex flex-col overflow-hidden">
+            <div key={moduleName} className="bg-zinc-950/40 border border-zinc-900/60 rounded-xl mb-3 flex flex-col overflow-visible">
               
               {/* MODULE HEADER */}
-              <div className="relative z-20 bg-zinc-950/95 border-b border-zinc-900/60 px-3 py-2 flex items-center justify-between rounded-t-xl">
+              <div className="sticky top-[244px] z-20 bg-zinc-950/95 backdrop-blur-xl border-b border-zinc-900/60 px-3 py-2 flex items-center justify-between rounded-t-xl">
                 <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
                   {moduleName}
                 </span>
@@ -785,10 +785,9 @@ export default function Home() {
                                       {!isDayCollapsed && (
                                         <motion.div
                                           initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                                          animate={{ height: 'auto', opacity: 1 }}
+                                          animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
                                           exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
                                           transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                          style={{ overflow: isDayCollapsed ? 'hidden' : 'visible' }}
                                           className="space-y-4 pt-4 pb-5"
                                         >
                                           {day.dayNumber === baseRealWorldDayIndex ? (
@@ -875,10 +874,9 @@ export default function Home() {
                                       {!isDayCollapsed && (
                                         <motion.div
                                           initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                                          animate={{ height: 'auto', opacity: 1 }}
+                                          animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
                                           exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
                                           transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                          style={{ overflow: isDayCollapsed ? 'hidden' : 'visible' }}
                                           className="space-y-4 pt-4 pb-5"
                                         >
                                           {day.dayNumber === baseRealWorldDayIndex ? (
