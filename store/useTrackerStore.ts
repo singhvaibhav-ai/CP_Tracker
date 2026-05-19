@@ -37,20 +37,28 @@ export const useTrackerStore = create<TrackerStore & {
             set({ isAuthenticated: true });
           }
 
-          const { data, error } = await supabase.from('user_progress').select('task_id, is_completed');
+          const { data, error } = await supabase.from('user_progress').select('task_id, is_completed, updated_at');
           if (error) throw error;
 
           if (data && data.length > 0) {
             set((state) => {
               const courseDays = [...state.courseDays];
-              const completedTaskIds = new Set(data.filter(r => r.is_completed).map(r => r.task_id));
+              const completedTasksMap = new Map<string, string | null>(
+                data.filter(r => r.is_completed).map(r => [r.task_id, r.updated_at])
+              );
 
               courseDays.forEach(day => {
                 day.lectures.forEach(task => {
-                  if (completedTaskIds.has(task.id)) task.isCompleted = true;
+                  if (completedTasksMap.has(task.id)) {
+                    task.isCompleted = true;
+                    task.updatedAt = completedTasksMap.get(task.id);
+                  }
                 });
                 day.problems.forEach(task => {
-                  if (completedTaskIds.has(task.id)) task.isCompleted = true;
+                  if (completedTasksMap.has(task.id)) {
+                    task.isCompleted = true;
+                    task.updatedAt = completedTasksMap.get(task.id);
+                  }
                 });
               });
 
@@ -78,6 +86,7 @@ export const useTrackerStore = create<TrackerStore & {
 
         let wasCompleted = false;
         let isCompleted = false;
+        const nowStr = new Date().toISOString();
 
         set((state) => {
           const courseDays = [...state.courseDays];
@@ -93,7 +102,11 @@ export const useTrackerStore = create<TrackerStore & {
 
           wasCompleted = tasks[taskIndex].isCompleted;
           isCompleted = !wasCompleted;
-          tasks[taskIndex] = { ...tasks[taskIndex], isCompleted };
+          tasks[taskIndex] = { 
+            ...tasks[taskIndex], 
+            isCompleted,
+            updatedAt: isCompleted ? nowStr : null
+          };
           
           day[type] = tasks;
           courseDays[dayIndex] = day;
@@ -102,7 +115,11 @@ export const useTrackerStore = create<TrackerStore & {
         });
 
         // Fire async upsert
-        supabase.from('user_progress').upsert({ task_id: taskId, is_completed: isCompleted }).then(({ error }) => {
+        supabase.from('user_progress').upsert({ 
+          task_id: taskId, 
+          is_completed: isCompleted,
+          updated_at: isCompleted ? nowStr : null
+        }).then(({ error }) => {
           if (error) {
             console.error('Failed to sync toggle:', error);
             toast.error('Failed to sync progress. Rolling back.');
@@ -116,7 +133,11 @@ export const useTrackerStore = create<TrackerStore & {
                 const tasks = [...day[type]];
                 const taskIndex = tasks.findIndex((t) => t.id === taskId);
                 if (taskIndex !== -1) {
-                  tasks[taskIndex] = { ...tasks[taskIndex], isCompleted: wasCompleted };
+                  tasks[taskIndex] = { 
+                    ...tasks[taskIndex], 
+                    isCompleted: wasCompleted,
+                    updatedAt: wasCompleted ? nowStr : null // Keep original if rollback, but wasCompleted is a boolean so simple check
+                  };
                   day[type] = tasks;
                   courseDays[dayIndex] = day;
                 }

@@ -936,6 +936,9 @@ function generateSeedData(): CourseDay[] {
     const vidChunks = distribute(videos, numDays);
     const probChunks = distribute(problems, numDays);
 
+    let levelLecturesCounter = 1;
+    let levelProblemsCounter = 1;
+
     for (let idx = 0; idx < daysForLevel.length; idx++) {
       const dayNum = daysForLevel[idx];
       const vChunk = vidChunks[idx] || [];
@@ -953,7 +956,7 @@ function generateSeedData(): CourseDay[] {
       for (const v of vChunk) {
         dayObj.lectures.push({
           id: `t${taskIdCounter++}`,
-          title: v.title,
+          title: `${levelLecturesCounter++}. ${v.title}`,
           type: "Video",
           isCompleted: false,
           moduleName: v.moduleName
@@ -963,7 +966,7 @@ function generateSeedData(): CourseDay[] {
       for (const p of pChunk) {
         dayObj.problems.push({
           id: `t${taskIdCounter++}`,
-          title: p.title,
+          title: `${levelProblemsCounter++}. ${p.title}`,
           type: "Problem",
           isCompleted: false,
           moduleName: p.moduleName

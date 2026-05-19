@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
-import { Circle, CheckCircle2, Video, Code } from 'lucide-react';
+import { Circle, CheckCircle2, Video, Code, Lock } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { Task } from '../types';
 import { useTrackerStore } from '../store/useTrackerStore';
+import { toast } from 'sonner';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -13,32 +14,46 @@ interface TaskItemProps {
   dayNumber: number;
   type: 'lectures' | 'problems';
   task: Task;
+  disabled?: boolean;
 }
 
-export default function TaskItem({ dayNumber, type, task }: TaskItemProps) {
+export default function TaskItem({ dayNumber, type, task, disabled }: TaskItemProps) {
   const toggleTask = useTrackerStore((state) => state.toggleTask);
   const isAuthenticated = useTrackerStore((state) => state.isAuthenticated);
 
   const Icon = task.type === 'Video' ? Video : Code;
+  const isActuallyDisabled = disabled && !task.isCompleted;
+
+  const handleClick = () => {
+    if (isActuallyDisabled) {
+      toast.error("This is an incomplete historical task! You can only complete it from Today's Backlog.");
+      return;
+    }
+    toggleTask(dayNumber, task.id, type);
+  };
 
   return (
     <div
-      onClick={() => toggleTask(dayNumber, task.id, type)}
+      onClick={handleClick}
       className={cn(
         "flex items-center gap-3 p-3 rounded-lg transition-colors duration-200 group border border-transparent",
-        isAuthenticated ? "cursor-pointer" : "cursor-not-allowed opacity-90",
+        isActuallyDisabled 
+          ? "cursor-not-allowed opacity-50 bg-zinc-950/40 border-zinc-900/50"
+          : isAuthenticated ? "cursor-pointer" : "cursor-not-allowed opacity-90",
         task.isCompleted
           ? "bg-emerald-900/20 border-emerald-900/30"
-          : isAuthenticated ? "hover:bg-zinc-800/50 hover:border-zinc-700/50" : "bg-zinc-900/50"
+          : !isActuallyDisabled && isAuthenticated ? "hover:bg-zinc-800/50 hover:border-zinc-700/50" : "bg-zinc-900/50"
       )}
     >
       <motion.div
-        whileTap={{ scale: 0.8 }}
+        whileTap={isActuallyDisabled ? {} : { scale: 0.8 }}
         animate={task.isCompleted ? { scale: [1, 1.2, 1] } : {}}
         transition={{ duration: 0.3 }}
       >
         {task.isCompleted ? (
           <CheckCircle2 className="w-6 h-6 text-emerald-500 flex-shrink-0" />
+        ) : isActuallyDisabled ? (
+          <Lock className="w-6 h-6 text-zinc-600 flex-shrink-0" />
         ) : (
           <Circle className="w-6 h-6 text-zinc-500 group-hover:text-zinc-400 flex-shrink-0" />
         )}

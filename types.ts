@@ -6,6 +6,7 @@ export interface Task {
   type: TaskType;
   isCompleted: boolean;
   moduleName: string;
+  updatedAt?: string | null;
 }
 
 export interface CourseDay {

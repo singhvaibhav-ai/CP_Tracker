@@ -9,7 +9,7 @@ import { Toaster } from 'sonner';
 import { useTrackerStore } from '../store/useTrackerStore';
 import DateStrip from '../components/DateStrip';
 import TaskItem from '../components/TaskItem';
-import { Task } from '../types';
+import { Task, CourseDay } from '../types';
 
 const LEVEL_BOUNDARIES = [
   { id: 1, name: 'LEVEL 1', dates: 'May 18 - May 21', start: 1, end: 4 },
@@ -28,6 +28,16 @@ export default function Home() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [todaySectionsCollapsed, setTodaySectionsCollapsed] = useState<Record<string, boolean>>({
+    lectures_backlogs: false,
+    lectures_completed: false,
+    lectures_pending: false,
+    lectures_additional: false,
+    problems_backlogs: false,
+    problems_completed: false,
+    problems_pending: false,
+    problems_additional: false,
+  });
 
   // Load and apply persistent theme preference on mount
   useEffect(() => {
@@ -53,7 +63,6 @@ export default function Home() {
   const courseDays = useTrackerStore((state) => state.courseDays);
   const getOverallProgress = useTrackerStore((state) => state.getOverallProgress);
   const getLevelProgress = useTrackerStore((state) => state.getLevelProgress);
-  const isModuleComplete = useTrackerStore((state) => state.isModuleComplete);
   const isLevelComplete = useTrackerStore((state) => state.isLevelComplete);
   const collapsedItems = useTrackerStore((state) => state.collapsedItems);
   const toggleCollapse = useTrackerStore((state) => state.toggleCollapse);
@@ -135,66 +144,400 @@ export default function Home() {
     </div>;
   }
 
-  const renderTaskGroup = (tasks: Task[], dayNumber: number, type: 'lectures' | 'problems') => {
-    if (tasks.length === 0) {
-      return <div className="text-zinc-600 text-sm italic px-4 py-2">No {type} for this day</div>;
-    }
 
-    // Group by moduleName
-    const grouped = tasks.reduce((acc, task) => {
-      const mod = task.moduleName || 'General';
+
+  const renderTasksWithModules = (tasks: (Task & { dayNumber: number })[], type: 'lectures' | 'problems', disabled?: boolean) => {
+    if (!tasks || tasks.length === 0) return null;
+
+    // 1. Group Tasks Strictly
+    const groupedTasks = tasks.reduce((acc, task) => {
+      const mod = task.moduleName || "General";
       if (!acc[mod]) acc[mod] = [];
       acc[mod].push(task);
       return acc;
-    }, {} as Record<string, Task[]>);
+    }, {} as Record<string, (Task & { dayNumber: number })[]>);
 
+    // 2. Render with Strict Flex-Col Flow
     return (
-      <div className="space-y-4">
-        {Object.entries(grouped).map(([moduleName, moduleTasks]) => {
-          const completed = isModuleComplete(moduleName, type);
-          const collapseId = `${dayNumber}-${type}-${moduleName}`;
-          const isCollapsed = collapsedItems.includes(collapseId);
-          
+      <div className="space-y-3 pt-1">
+        {Object.entries(groupedTasks).map(([moduleName, moduleTasks]) => {
+          const isModuleComplete = moduleTasks.length > 0 && moduleTasks.every(t => t.isCompleted);
+
           return (
-            <div key={collapseId} className="space-y-2">
-              <button 
-                onClick={() => toggleCollapse(collapseId)}
-                className="flex items-center gap-2 px-4 h-[48px] py-0 -mx-4 w-[calc(100%+2rem)] text-left group border-b border-zinc-800/50 rounded-lg bg-zinc-950/90 backdrop-blur-md shadow-md sticky top-[244px] z-20"
-              >
-                <ChevronDown 
-                  className={`w-4 h-4 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`} 
-                />
-                <span className="text-xs font-bold text-zinc-500 group-hover:text-zinc-400 uppercase tracking-widest transition-colors">
+            <div key={moduleName} className="bg-zinc-950/40 border border-zinc-900/60 rounded-xl mb-3 flex flex-col overflow-hidden">
+              
+              {/* MODULE HEADER */}
+              <div className="relative z-20 bg-zinc-950/95 border-b border-zinc-900/60 px-3 py-2 flex items-center justify-between rounded-t-xl">
+                <span className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
                   {moduleName}
                 </span>
-                {completed && (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                {isModuleComplete && (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                 )}
-              </button>
-              
-              <AnimatePresence initial={false}>
-                {!isCollapsed && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                    animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
-                    exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                    transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  >
-                    <div className="space-y-2 pt-1">
-                      {moduleTasks.map(task => (
-                        <div key={task.id} className="bg-zinc-900/80 rounded-xl border border-zinc-800/80 hover:border-zinc-700 transition-colors">
-                          <TaskItem dayNumber={dayNumber} type={type} task={task} />
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              </div>
+
+              {/* TASKS CONTAINER */}
+              <div className="flex flex-col space-y-1.5 p-2 bg-transparent">
+                {moduleTasks.map(task => (
+                  <TaskItem 
+                    key={task.id} 
+                    dayNumber={task.dayNumber} 
+                    type={type} 
+                    task={task} 
+                    disabled={disabled} 
+                  />
+                ))}
+              </div>
+
             </div>
           );
         })}
       </div>
     );
+  };
+
+  const renderTodayBuckets = (dayNumber: number, type: 'lectures' | 'problems') => {
+    // 1. Backlogs: Tasks from Day 1 to Yesterday where isCompleted === false
+    const backlogs: (Task & { dayNumber: number })[] = [];
+    for (let d = 1; d < baseRealWorldDayIndex; d++) {
+      const dayData = courseDays[d - 1];
+      if (dayData) {
+        dayData[type].forEach(task => {
+          if (!task.isCompleted) {
+            backlogs.push({ ...task, dayNumber: d });
+          }
+        });
+      }
+    }
+
+    // 2. Today's Completed: Tasks assigned to Today where isCompleted === true
+    const todayDayData = courseDays[dayNumber - 1];
+    const todayCompleted = todayDayData 
+      ? todayDayData[type].filter(t => t.isCompleted).map(t => ({ ...t, dayNumber })) 
+      : [];
+
+    // 3. Today's Pending: Tasks assigned to Today where isCompleted === false
+    const todayPending = todayDayData 
+      ? todayDayData[type].filter(t => !t.isCompleted).map(t => ({ ...t, dayNumber })) 
+      : [];
+
+    // 4. Additional Tasks: Tasks assigned to Tomorrow or beyond where isCompleted === true AND updatedAt matches Today
+    const localTodayStr = format(new Date(), 'yyyy-MM-dd');
+    const additional: (Task & { dayNumber: number })[] = [];
+    for (let d = baseRealWorldDayIndex + 1; d <= 70; d++) {
+      const dayData = courseDays[d - 1];
+      if (dayData) {
+        dayData[type].forEach(task => {
+          if (task.isCompleted && task.updatedAt && task.updatedAt.startsWith(localTodayStr)) {
+            additional.push({ ...task, dayNumber: d });
+          }
+        });
+      }
+    }
+
+    const backlogKey = `${type}_backlogs` as const;
+    const completedKey = `${type}_completed` as const;
+    const pendingKey = `${type}_pending` as const;
+    const additionalKey = `${type}_additional` as const;
+
+    const toggleSection = (section: keyof typeof todaySectionsCollapsed) => {
+      setTodaySectionsCollapsed(prev => ({
+        ...prev,
+        [section]: !prev[section]
+      }));
+    };
+
+    return (
+      <div className="space-y-4 pt-4">
+        {/* BACKLOGS */}
+        <div 
+          style={{ overflow: todaySectionsCollapsed[backlogKey] ? 'hidden' : 'visible' }}
+          className="border border-red-500/20 bg-red-950/5 rounded-xl shadow-sm transition-all duration-300"
+        >
+          <button
+            onClick={() => toggleSection(backlogKey)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-red-950/10 border-b border-red-500/10 text-left transition-colors hover:bg-red-950/20"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black tracking-widest text-red-400 uppercase">Backlogs</span>
+              <span className="px-1.5 py-0.5 text-[10px] font-black bg-red-500/20 text-red-400 rounded">
+                {backlogs.length}
+              </span>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-red-400 transition-transform duration-300 ${todaySectionsCollapsed[backlogKey] ? "-rotate-90" : "rotate-0"}`} />
+          </button>
+          {!todaySectionsCollapsed[backlogKey] && (
+            <div className="p-3 space-y-2">
+              {backlogs.length === 0 ? (
+                <div className="text-zinc-500 text-xs italic px-2 py-1">No pending backlogs! Great job!</div>
+              ) : (
+                renderTasksWithModules(backlogs, type, false)
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* COMPLETED TODAY */}
+        <div 
+          style={{ overflow: todaySectionsCollapsed[completedKey] ? 'hidden' : 'visible' }}
+          className="border border-emerald-500/20 bg-emerald-950/5 rounded-xl shadow-sm transition-all duration-300"
+        >
+          <button
+            onClick={() => toggleSection(completedKey)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-emerald-950/10 border-b border-emerald-500/10 text-left transition-colors hover:bg-emerald-950/20"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black tracking-widest text-emerald-400 uppercase">Completed Today</span>
+              <span className="px-1.5 py-0.5 text-[10px] font-black bg-emerald-500/20 text-emerald-400 rounded">
+                {todayCompleted.length}
+              </span>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-emerald-400 transition-transform duration-300 ${todaySectionsCollapsed[completedKey] ? "-rotate-90" : "rotate-0"}`} />
+          </button>
+          {!todaySectionsCollapsed[completedKey] && (
+            <div className="p-3 space-y-2">
+              {todayCompleted.length === 0 ? (
+                <div className="text-zinc-500 text-xs italic px-2 py-1">No completed tasks yet. Get grinding!</div>
+              ) : (
+                renderTasksWithModules(todayCompleted, type, false)
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* PENDING TODAY */}
+        <div 
+          style={{ overflow: todaySectionsCollapsed[pendingKey] ? 'hidden' : 'visible' }}
+          className="border border-blue-500/20 bg-blue-950/5 rounded-xl shadow-sm transition-all duration-300"
+        >
+          <button
+            onClick={() => toggleSection(pendingKey)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-blue-950/10 border-b border-blue-500/10 text-left transition-colors hover:bg-blue-950/20"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black tracking-widest text-blue-400 uppercase">Pending Today</span>
+              <span className="px-1.5 py-0.5 text-[10px] font-black bg-blue-500/20 text-blue-400 rounded">
+                {todayPending.length}
+              </span>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-blue-400 transition-transform duration-300 ${todaySectionsCollapsed[pendingKey] ? "-rotate-90" : "rotate-0"}`} />
+          </button>
+          {!todaySectionsCollapsed[pendingKey] && (
+            <div className="p-3 space-y-2">
+              {todayPending.length === 0 ? (
+                <div className="text-zinc-500 text-xs italic px-2 py-1">All of today&apos;s tasks completed!</div>
+              ) : (
+                renderTasksWithModules(todayPending, type, false)
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ADDITIONAL TASKS */}
+        <div 
+          style={{ overflow: todaySectionsCollapsed[additionalKey] ? 'hidden' : 'visible' }}
+          className="border border-purple-500/20 bg-purple-950/5 rounded-xl shadow-sm transition-all duration-300"
+        >
+          <button
+            onClick={() => toggleSection(additionalKey)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-purple-950/10 border-b border-purple-500/10 text-left transition-colors hover:bg-purple-950/20"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black tracking-widest text-purple-400 uppercase">Additional Tasks</span>
+              <span className="px-1.5 py-0.5 text-[10px] font-black bg-purple-500/20 text-purple-400 rounded">
+                {additional.length}
+              </span>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-purple-400 transition-transform duration-300 ${todaySectionsCollapsed[additionalKey] ? "-rotate-90" : "rotate-0"}`} />
+          </button>
+          {!todaySectionsCollapsed[additionalKey] && (
+            <div className="p-3 space-y-2">
+              {additional.length === 0 ? (
+                <div className="text-zinc-500 text-xs italic px-2 py-1">No future tasks completed today.</div>
+              ) : (
+                renderTasksWithModules(additional, type, false)
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderPastDay = (day: CourseDay, type: 'lectures' | 'problems') => {
+    const completed = day[type].filter(t => t.isCompleted).map(t => ({ ...t, dayNumber: day.dayNumber }));
+    const incompleted = day[type].filter(t => !t.isCompleted).map(t => ({ ...t, dayNumber: day.dayNumber }));
+
+    // Historical Additional Tasks: completed tasks on days d > day.dayNumber where updatedAt matches day.date
+    const pastDayDateStr = day.date;
+    const additional: (Task & { dayNumber: number })[] = [];
+    if (pastDayDateStr) {
+      for (let d = day.dayNumber + 1; d <= 70; d++) {
+        const dayData = courseDays[d - 1];
+        if (dayData) {
+          dayData[type].forEach(task => {
+            if (task.isCompleted && task.updatedAt && task.updatedAt.startsWith(pastDayDateStr)) {
+              additional.push({ ...task, dayNumber: d });
+            }
+          });
+        }
+      }
+    }
+
+    // Historical Backlogs Cleared: completed tasks on days d < day.dayNumber where updatedAt matches day.date
+    const backlogsCleared: (Task & { dayNumber: number })[] = [];
+    if (pastDayDateStr) {
+      for (let d = 1; d < day.dayNumber; d++) {
+        const dayData = courseDays[d - 1];
+        if (dayData) {
+          dayData[type].forEach(task => {
+            if (task.isCompleted && task.updatedAt && task.updatedAt.startsWith(pastDayDateStr)) {
+              backlogsCleared.push({ ...task, dayNumber: d });
+            }
+          });
+        }
+      }
+    }
+
+    const completedKey = `past_${day.dayNumber}_${type}_completed`;
+    const additionalKey = `past_${day.dayNumber}_${type}_additional`;
+    const backlogsClearedKey = `past_${day.dayNumber}_${type}_backlogs_cleared`;
+    const incompletedKey = `past_${day.dayNumber}_${type}_incompleted`;
+
+    const isCompletedCollapsed = todaySectionsCollapsed[completedKey] ?? true;
+    const isAdditionalCollapsed = todaySectionsCollapsed[additionalKey] ?? true;
+    const isBacklogsClearedCollapsed = todaySectionsCollapsed[backlogsClearedKey] ?? true;
+    const isIncompletedCollapsed = todaySectionsCollapsed[incompletedKey] ?? false;
+
+    const toggleSection = (section: string) => {
+      setTodaySectionsCollapsed(prev => ({
+        ...prev,
+        [section]: !(prev[section] ?? (section.endsWith('_incompleted') ? false : true))
+      }));
+    };
+
+    return (
+      <div className="space-y-4 pt-4">
+        {/* COMPLETED */}
+        {completed.length > 0 && (
+          <div 
+            style={{ overflow: isCompletedCollapsed ? 'hidden' : 'visible' }}
+            className="border border-emerald-500/20 bg-emerald-950/5 rounded-xl shadow-sm transition-all duration-300"
+          >
+            <button
+              onClick={() => toggleSection(completedKey)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-emerald-950/10 border-b border-emerald-500/10 text-left transition-colors hover:bg-emerald-950/20"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black tracking-widest text-emerald-400 uppercase">Completed</span>
+                <span className="px-1.5 py-0.5 text-[10px] font-black bg-emerald-500/20 text-emerald-400 rounded">
+                  {completed.length}
+                </span>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-emerald-400 transition-transform duration-300 ${isCompletedCollapsed ? "-rotate-90" : "rotate-0"}`} />
+            </button>
+            {!isCompletedCollapsed && (
+              <div className="p-3 space-y-2">
+                {renderTasksWithModules(completed, type, false)}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ADDITIONAL TASKS COMPLETED */}
+        {additional.length > 0 && (
+          <div 
+            style={{ overflow: isAdditionalCollapsed ? 'hidden' : 'visible' }}
+            className="border border-purple-500/20 bg-purple-950/5 rounded-xl shadow-sm transition-all duration-300"
+          >
+            <button
+              onClick={() => toggleSection(additionalKey)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-purple-950/10 border-b border-purple-500/10 text-left transition-colors hover:bg-purple-950/20"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-black tracking-widest text-purple-400 uppercase text-xs md:text-sm">Additional Tasks Completed</span>
+                <span className="px-1.5 py-0.5 text-[10px] font-black bg-purple-500/20 text-purple-400 rounded">
+                  {additional.length}
+                </span>
+                <span className="text-[9px] bg-purple-500/20 text-purple-400 border border-purple-500/30 px-1.5 py-0.5 rounded leading-none uppercase tracking-wider font-bold">Ahead of Schedule</span>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-purple-400 transition-transform duration-300 ${isAdditionalCollapsed ? "-rotate-90" : "rotate-0"}`} />
+            </button>
+            {!isAdditionalCollapsed && (
+              <div className="p-3 space-y-2">
+                {renderTasksWithModules(additional, type, false)}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* BACKLOGS CLEARED */}
+        {backlogsCleared.length > 0 && (
+          <div 
+            style={{ overflow: isBacklogsClearedCollapsed ? 'hidden' : 'visible' }}
+            className="border border-indigo-500/20 bg-indigo-950/5 rounded-xl shadow-sm transition-all duration-300"
+          >
+            <button
+              onClick={() => toggleSection(backlogsClearedKey)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-indigo-950/10 border-b border-indigo-500/10 text-left transition-colors hover:bg-indigo-950/20"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-black tracking-widest text-indigo-400 uppercase text-xs md:text-sm">Backlogs Cleared</span>
+                <span className="px-1.5 py-0.5 text-[10px] font-black bg-indigo-500/20 text-indigo-400 rounded">
+                  {backlogsCleared.length}
+                </span>
+                <span className="text-[9px] bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-1.5 py-0.5 rounded leading-none uppercase tracking-wider font-bold">Caught Up</span>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-indigo-400 transition-transform duration-300 ${isBacklogsClearedCollapsed ? "-rotate-90" : "rotate-0"}`} />
+            </button>
+            {!isBacklogsClearedCollapsed && (
+              <div className="p-3 space-y-2">
+                {renderTasksWithModules(backlogsCleared, type, false)}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* INCOMPLETED (LOCKED) */}
+        {incompleted.length > 0 && (
+          <div 
+            style={{ overflow: isIncompletedCollapsed ? 'hidden' : 'visible' }}
+            className="border border-red-500/20 bg-red-950/5 rounded-xl shadow-sm transition-all duration-300"
+          >
+            <button
+              onClick={() => toggleSection(incompletedKey)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-red-950/10 border-b border-red-500/10 text-left transition-colors hover:bg-red-950/20"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-black tracking-widest text-red-400 uppercase text-xs md:text-sm">Incompleted</span>
+                <span className="px-1.5 py-0.5 text-[10px] font-black bg-red-500/20 text-red-400 rounded">
+                  {incompleted.length}
+                </span>
+                <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded leading-none uppercase tracking-wider font-bold">Locked (Read-Only)</span>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-red-400 transition-transform duration-300 ${isIncompletedCollapsed ? "-rotate-90" : "rotate-0"}`} />
+            </button>
+            {!isIncompletedCollapsed && (
+              <div className="p-3 space-y-2">
+                {renderTasksWithModules(incompleted, type, true)}
+              </div>
+            )}
+          </div>
+        )}
+
+        {completed.length === 0 && additional.length === 0 && backlogsCleared.length === 0 && incompleted.length === 0 && (
+          <div className="text-zinc-600 text-xs italic px-2">No {type} for this day.</div>
+        )}
+      </div>
+    );
+  };
+
+  const renderFutureDay = (day: CourseDay, type: 'lectures' | 'problems') => {
+    if (day[type].length === 0) {
+      return <div className="text-zinc-600 text-sm italic px-4 py-2">No {type} for this day</div>;
+    }
+    const tasks = day[type].map(t => ({ ...t, dayNumber: day.dayNumber }));
+    return renderTasksWithModules(tasks, type);
   };
 
   return (
@@ -392,7 +735,7 @@ export default function Home() {
                               <h3 className="text-xl font-bold text-white uppercase tracking-wider">Lectures</h3>
                             </div>
                             
-                            <div className="space-y-8 pb-8">
+                            <div className="space-y-0 pb-8">
                               {maxVisibleLectureDayIndex < level.start && (
                                 <div className="flex flex-col items-center justify-center py-12 opacity-50 space-y-4 bg-zinc-900/20 rounded-2xl border border-zinc-800/30 border-dashed">
                                   <Lock className="w-8 h-8 text-zinc-600" />
@@ -401,18 +744,25 @@ export default function Home() {
                                   </p>
                                 </div>
                               )}
-                                                        {daysInLevel.map((day) => {
+                              {daysInLevel.map((day) => {
                                 if (day.dayNumber > maxVisibleLectureDayIndex) return null;
                                 if (day.lectures.length === 0) return null;
 
                                 const dayCollapseId = `day-${day.dayNumber}-lectures`;
-                                const isDayCollapsed = collapsedItems.includes(dayCollapseId);
+                                const isDayCollapsed = collapsedItems.includes(dayCollapseId)
+                                  ? (day.dayNumber === baseRealWorldDayIndex ? true : false)
+                                  : (day.dayNumber === baseRealWorldDayIndex ? false : true);
 
                                 return (
-                                  <div key={`lectures-day-${day.dayNumber}`} className="space-y-4 bg-zinc-900/30 p-5 pt-0 rounded-2xl border border-zinc-800/40">
+                                  <div 
+                                    key={`lectures-day-${day.dayNumber}`} 
+                                    className={`bg-zinc-900/30 px-5 pt-0 pb-0 rounded-2xl border border-zinc-800/40 transition-all duration-300 ${
+                                      isDayCollapsed ? 'overflow-hidden mb-0' : 'overflow-visible mb-6'
+                                    }`}
+                                  >
                                     <button
                                       onClick={() => toggleCollapse(dayCollapseId)}
-                                      className="flex items-center gap-4 h-[60px] py-0 -mx-4 px-4 w-[calc(100%+2rem)] border-b border-zinc-800/50 rounded-lg shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
+                                      className="flex items-center gap-4 h-[60px] py-0 -mx-5 px-5 w-[calc(100%+2.5rem)] border-b border-zinc-800/50 rounded-t-2xl rounded-b-none shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
                                     >
                                       <ChevronDown 
                                         className={`w-5 h-5 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isDayCollapsed ? '-rotate-90' : 'rotate-0'}`} 
@@ -420,6 +770,11 @@ export default function Home() {
                                       <span className="text-sm font-black text-blue-500 tracking-[0.2em] uppercase whitespace-nowrap">
                                         Day {day.dayNumber}
                                       </span>
+                                      {day.dayNumber === baseRealWorldDayIndex && (
+                                        <span className="text-[10px] font-black bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded uppercase tracking-wider">
+                                          Today
+                                        </span>
+                                      )}
                                       <div className="h-px flex-1 bg-zinc-800/80"></div>
                                       <span className="text-xs text-zinc-500 font-medium whitespace-nowrap">
                                         {format(day.date ? new Date(day.date) : addDays(START_DATE, day.dayNumber - 1), 'MMM do')}
@@ -430,12 +785,19 @@ export default function Home() {
                                       {!isDayCollapsed && (
                                         <motion.div
                                           initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                                          animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
+                                          animate={{ height: 'auto', opacity: 1 }}
                                           exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
                                           transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                          className="space-y-4 pb-2"
+                                          style={{ overflow: isDayCollapsed ? 'hidden' : 'visible' }}
+                                          className="space-y-4 pt-4 pb-5"
                                         >
-                                          {renderTaskGroup(day.lectures, day.dayNumber, 'lectures')}
+                                          {day.dayNumber === baseRealWorldDayIndex ? (
+                                            renderTodayBuckets(day.dayNumber, 'lectures')
+                                          ) : day.dayNumber < baseRealWorldDayIndex ? (
+                                            renderPastDay(day, 'lectures')
+                                          ) : (
+                                            renderFutureDay(day, 'lectures')
+                                          )}
                                         </motion.div>
                                       )}
                                     </AnimatePresence>
@@ -462,7 +824,7 @@ export default function Home() {
                               <h3 className="text-xl font-bold text-white uppercase tracking-wider">Practice Problems</h3>
                             </div>
                             
-                            <div className="space-y-8 pb-8">
+                            <div className="space-y-0 pb-8">
                               {maxVisibleProblemDayIndex < level.start && (
                                 <div className="flex flex-col items-center justify-center py-12 opacity-50 space-y-4 bg-zinc-900/20 rounded-2xl border border-zinc-800/30 border-dashed">
                                   <Lock className="w-8 h-8 text-zinc-600" />
@@ -477,13 +839,20 @@ export default function Home() {
                                 if (day.problems.length === 0) return null;
 
                                 const dayCollapseId = `day-${day.dayNumber}-problems`;
-                                const isDayCollapsed = collapsedItems.includes(dayCollapseId);
+                                const isDayCollapsed = collapsedItems.includes(dayCollapseId)
+                                  ? (day.dayNumber === baseRealWorldDayIndex ? true : false)
+                                  : (day.dayNumber === baseRealWorldDayIndex ? false : true);
 
                                 return (
-                                  <div key={`problems-day-${day.dayNumber}`} className="space-y-4 bg-zinc-900/30 p-5 pt-0 rounded-2xl border border-zinc-800/40">
+                                  <div 
+                                    key={`problems-day-${day.dayNumber}`} 
+                                    className={`bg-zinc-900/30 px-5 pt-0 pb-0 rounded-2xl border border-zinc-800/40 transition-all duration-300 ${
+                                      isDayCollapsed ? 'overflow-hidden mb-0' : 'overflow-visible mb-6'
+                                    }`}
+                                  >
                                     <button
                                       onClick={() => toggleCollapse(dayCollapseId)}
-                                      className="flex items-center gap-4 h-[60px] py-0 -mx-4 px-4 w-[calc(100%+2rem)] border-b border-zinc-800/50 rounded-lg shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
+                                      className="flex items-center gap-4 h-[60px] py-0 -mx-5 px-5 w-[calc(100%+2.5rem)] border-b border-zinc-800/50 rounded-t-2xl rounded-b-none shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
                                     >
                                       <ChevronDown 
                                         className={`w-5 h-5 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isDayCollapsed ? '-rotate-90' : 'rotate-0'}`} 
@@ -491,6 +860,11 @@ export default function Home() {
                                       <span className="text-sm font-black text-emerald-500 tracking-[0.2em] uppercase whitespace-nowrap">
                                         Day {day.dayNumber}
                                       </span>
+                                      {day.dayNumber === baseRealWorldDayIndex && (
+                                        <span className="text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded uppercase tracking-wider">
+                                          Today
+                                        </span>
+                                      )}
                                       <div className="h-px flex-1 bg-zinc-800/80"></div>
                                       <span className="text-xs text-zinc-500 font-medium whitespace-nowrap">
                                         {format(day.date ? new Date(day.date) : addDays(START_DATE, day.dayNumber - 1), 'MMM do')}
@@ -501,12 +875,19 @@ export default function Home() {
                                       {!isDayCollapsed && (
                                         <motion.div
                                           initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                                          animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
+                                          animate={{ height: 'auto', opacity: 1 }}
                                           exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
                                           transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                          className="space-y-4 pb-2"
+                                          style={{ overflow: isDayCollapsed ? 'hidden' : 'visible' }}
+                                          className="space-y-4 pt-4 pb-5"
                                         >
-                                          {renderTaskGroup(day.problems, day.dayNumber, 'problems')}
+                                          {day.dayNumber === baseRealWorldDayIndex ? (
+                                            renderTodayBuckets(day.dayNumber, 'problems')
+                                          ) : day.dayNumber < baseRealWorldDayIndex ? (
+                                            renderPastDay(day, 'problems')
+                                          ) : (
+                                            renderFutureDay(day, 'problems')
+                                          )}
                                         </motion.div>
                                       )}
                                     </AnimatePresence>
