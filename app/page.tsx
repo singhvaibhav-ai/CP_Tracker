@@ -436,11 +436,20 @@ export default function Home() {
               </div>
               <ChevronDown className={`w-4 h-4 text-emerald-400 transition-transform duration-300 ${isCompletedCollapsed ? "-rotate-90" : "rotate-0"}`} />
             </button>
-            {!isCompletedCollapsed && (
-              <div className="p-3 space-y-2">
-                {renderTasksWithModules(completed, type, false)}
-              </div>
-            )}
+            <AnimatePresence initial={false}>
+              {!isCompletedCollapsed && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                  animate={{ height: 'auto', opacity: 1, overflow: 'visible' }}
+                  exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  style={{ overflow: isCompletedCollapsed ? 'hidden' : 'visible' }}
+                  className="p-3 space-y-2"
+                >
+                  {renderTasksWithModules(completed, type, false)}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
 
@@ -463,11 +472,20 @@ export default function Home() {
               </div>
               <ChevronDown className={`w-4 h-4 text-purple-400 transition-transform duration-300 ${isAdditionalCollapsed ? "-rotate-90" : "rotate-0"}`} />
             </button>
-            {!isAdditionalCollapsed && (
-              <div className="p-3 space-y-2">
-                {renderTasksWithModules(additional, type, false)}
-              </div>
-            )}
+            <AnimatePresence initial={false}>
+              {!isAdditionalCollapsed && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                  animate={{ height: 'auto', opacity: 1, overflow: 'visible' }}
+                  exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  style={{ overflow: isAdditionalCollapsed ? 'hidden' : 'visible' }}
+                  className="p-3 space-y-2"
+                >
+                  {renderTasksWithModules(additional, type, false)}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
 
@@ -490,11 +508,20 @@ export default function Home() {
               </div>
               <ChevronDown className={`w-4 h-4 text-indigo-400 transition-transform duration-300 ${isBacklogsClearedCollapsed ? "-rotate-90" : "rotate-0"}`} />
             </button>
-            {!isBacklogsClearedCollapsed && (
-              <div className="p-3 space-y-2">
-                {renderTasksWithModules(backlogsCleared, type, false)}
-              </div>
-            )}
+            <AnimatePresence initial={false}>
+              {!isBacklogsClearedCollapsed && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                  animate={{ height: 'auto', opacity: 1, overflow: 'visible' }}
+                  exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  style={{ overflow: isBacklogsClearedCollapsed ? 'hidden' : 'visible' }}
+                  className="p-3 space-y-2"
+                >
+                  {renderTasksWithModules(backlogsCleared, type, false)}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
 
@@ -517,11 +544,20 @@ export default function Home() {
               </div>
               <ChevronDown className={`w-4 h-4 text-red-400 transition-transform duration-300 ${isIncompletedCollapsed ? "-rotate-90" : "rotate-0"}`} />
             </button>
-            {!isIncompletedCollapsed && (
-              <div className="p-3 space-y-2">
-                {renderTasksWithModules(incompleted, type, true)}
-              </div>
-            )}
+            <AnimatePresence initial={false}>
+              {!isIncompletedCollapsed && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                  animate={{ height: 'auto', opacity: 1, overflow: 'visible' }}
+                  exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  style={{ overflow: isIncompletedCollapsed ? 'hidden' : 'visible' }}
+                  className="p-3 space-y-2"
+                >
+                  {renderTasksWithModules(incompleted, type, true)}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
 
@@ -705,9 +741,10 @@ export default function Home() {
                     {!isCollapsed && (
                       <motion.div
                         initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                        animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
+                        animate={{ height: 'auto', opacity: 1, overflow: 'visible' }}
                         exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
                         transition={{ duration: 0.5, ease: 'easeInOut' }}
+                        style={{ overflow: isCollapsed ? 'hidden' : 'visible' }}
                       >
                         <div className="md:hidden flex p-1 bg-zinc-900 border border-zinc-800 rounded-xl mt-6">
                           <button 
@@ -785,9 +822,10 @@ export default function Home() {
                                       {!isDayCollapsed && (
                                         <motion.div
                                           initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                                          animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
+                                          animate={{ height: 'auto', opacity: 1, overflow: 'visible' }}
                                           exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
                                           transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                          style={{ overflow: isDayCollapsed ? 'hidden' : 'visible' }}
                                           className="space-y-4 pt-4 pb-5"
                                         >
                                           {day.dayNumber === baseRealWorldDayIndex ? (
@@ -874,9 +912,10 @@ export default function Home() {
                                       {!isDayCollapsed && (
                                         <motion.div
                                           initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                                          animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
+                                          animate={{ height: 'auto', opacity: 1, overflow: 'visible' }}
                                           exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
                                           transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                          style={{ overflow: isDayCollapsed ? 'hidden' : 'visible' }}
                                           className="space-y-4 pt-4 pb-5"
                                         >
                                           {day.dayNumber === baseRealWorldDayIndex ? (
