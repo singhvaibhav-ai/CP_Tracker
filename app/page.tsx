@@ -420,17 +420,17 @@ export default function Home() {
     const completedKey = `past_${day.dayNumber}_${type}_completed`;
     const additionalKey = `past_${day.dayNumber}_${type}_additional`;
     const backlogsClearedKey = `past_${day.dayNumber}_${type}_backlogs_cleared`;
-    const incompletedKey = `past_${day.dayNumber}_${type}_incompleted`;
+    const incompletedKey = `past_${day.dayNumber}_${type}_missed`;
 
     const isCompletedCollapsed = todaySectionsCollapsed[completedKey] ?? true;
     const isAdditionalCollapsed = todaySectionsCollapsed[additionalKey] ?? true;
     const isBacklogsClearedCollapsed = todaySectionsCollapsed[backlogsClearedKey] ?? true;
-    const isIncompletedCollapsed = todaySectionsCollapsed[incompletedKey] ?? false;
+    const isMissedCollapsed = todaySectionsCollapsed[incompletedKey] ?? false;
 
     const toggleSection = (section: string) => {
       setTodaySectionsCollapsed(prev => ({
         ...prev,
-        [section]: !(prev[section] ?? (section.endsWith('_incompleted') ? false : true))
+        [section]: !(prev[section] ?? (section.endsWith('_missed') ? false : true))
       }));
     };
 
@@ -546,7 +546,7 @@ export default function Home() {
         {/* INCOMPLETED (LOCKED) */}
         {incompleted.length > 0 && (
           <div
-            style={{ overflow: isIncompletedCollapsed ? 'hidden' : 'visible' }}
+            style={{ overflow: isMissedCollapsed ? 'hidden' : 'visible' }}
             className="border border-red-500/20 bg-red-950/5 rounded-xl shadow-sm transition-all duration-300"
           >
             <button
@@ -554,22 +554,22 @@ export default function Home() {
               className="w-full flex items-center justify-between px-4 py-3 bg-red-950/10 border-b border-red-500/10 text-left transition-colors hover:bg-red-950/20"
             >
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-black tracking-widest text-red-400 uppercase text-xs md:text-sm">Incompleted</span>
+                <span className="text-xs font-black tracking-widest text-red-400 uppercase text-xs md:text-sm">Missed</span>
                 <span className="px-1.5 py-0.5 text-[10px] font-black bg-red-500/20 text-red-400 rounded">
                   {incompleted.length}
                 </span>
                 <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded leading-none uppercase tracking-wider font-bold">Locked (Read-Only)</span>
               </div>
-              <ChevronDown className={`w-4 h-4 text-red-400 transition-transform duration-300 ${isIncompletedCollapsed ? "-rotate-90" : "rotate-0"}`} />
+              <ChevronDown className={`w-4 h-4 text-red-400 transition-transform duration-300 ${isMissedCollapsed ? "-rotate-90" : "rotate-0"}`} />
             </button>
             <AnimatePresence initial={false}>
-              {!isIncompletedCollapsed && (
+              {!isMissedCollapsed && (
                 <motion.div
                   initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
                   animate={{ height: 'auto', opacity: 1, overflow: 'visible' }}
                   exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  style={{ overflow: isIncompletedCollapsed ? 'hidden' : 'visible' }}
+                  style={{ overflow: isMissedCollapsed ? 'hidden' : 'visible' }}
                   className="p-3 space-y-2"
                 >
                   {renderTasksWithModules(incompleted, type, true)}
