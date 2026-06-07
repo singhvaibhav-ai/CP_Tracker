@@ -616,6 +616,8 @@ Maximum XOR subarray
 Maximum XOR With an Element From Array
 and 3 bonus problems
 
+this is all about level 3
+
 Module 1
 Dice Combinations
 Coin Combinations 1
