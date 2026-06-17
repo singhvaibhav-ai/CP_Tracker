@@ -252,13 +252,51 @@ Bellman Ford & Floyd Warshall
 
 const rawProblemData = `
 Module 1
-Welcome for you with Conditions, Multiples, Digits Summation, The Brothers, Comparison, Max and Min, Memo and Momo, Ali Baba and Puzzles, Watermelon, Catch the Coin, Is It a Cat?, Politics
+Welcome for you with Conditions
+Multiples
+Digits Summation
+The Brothers
+Comparison
+Max and Min
+Memo and Momo
+Ali Baba and Puzzles
+Watermelon
+Catch the Coin
+Is It a Cat?
+Politics
 
 Module 2
-Even, Odd, Positive and Negative, In Search of an Easy Problem, Divisors, One Prime, Pattern, Fibonacci, Permutation with array, Queue at the School, Pattern Printing, Print the Pattern, Pattern2, Word, Even Array, and 3 bonus problems will be unlocked after solving rest all problems of module 2
+Even, Odd, Positive and Negative
+In Search of an Easy Problem
+Divisors
+One Prime
+Pattern
+Fibonacci
+Permutation with array
+Queue at the School
+Pattern Printing
+Print the Pattern
+Pattern2
+Word
+Even Array
+and 3 bonus problems will be unlocked after solving rest all problems of module 2
 
 Module 3
-Water Station, Full House, Beautiful Year, Again Twenty Five!, When?, Rotate, Fill the Gaps, Same Map in the RPG World, Discord, Three Numbers, Everyone Loves to Sleep, Mark the Dust Sweeper, Subset MEX, Array Cancellation, and 3 bonus problems will be unlocked after solving rest all problems of module 3
+Water Station
+Full House
+Beautiful Year
+Again Twenty Five!
+When?
+Rotate
+Fill the Gaps
+Same Map in the RPG World
+Discord
+Three Numbers
+Everyone Loves to Sleep
+Mark the Dust Sweeper
+Subset MEX
+Array Cancellation
+and 3 bonus problems will be unlocked after solving rest all problems of module 3
 
 Module 4
 Minimize Ordering
@@ -873,22 +911,8 @@ function generateSeedData(): CourseDay[] {
         }
       }
 
-      if (currentLevel === 1 && currentLineToProcess.includes(',') && currentLineToProcess.startsWith("Welcome for you")) {
-        currentLineToProcess.split(',').forEach(p => {
-          if (p.trim()) levelsData[`l${currentLevel}`].problems.push({ title: p.trim(), moduleName: currentModuleFullName });
-        });
-      } else if (currentLevel === 1 && currentLineToProcess.includes(',') && currentLineToProcess.includes("Even, Odd")) {
-        currentLineToProcess.split(',').forEach(p => {
-          if (p.trim()) levelsData[`l${currentLevel}`].problems.push({ title: p.trim(), moduleName: currentModuleFullName });
-        });
-      } else if (currentLevel === 1 && currentLineToProcess.includes(',') && currentLineToProcess.includes("Water Station")) {
-        currentLineToProcess.split(',').forEach(p => {
-          if (p.trim()) levelsData[`l${currentLevel}`].problems.push({ title: p.trim(), moduleName: currentModuleFullName });
-        });
-      } else {
-        if (currentLineToProcess && currentLineToProcess.toLowerCase() !== "and") {
-          levelsData[`l${currentLevel}`].problems.push({ title: currentLineToProcess, moduleName: currentModuleFullName });
-        }
+      if (currentLineToProcess && currentLineToProcess.toLowerCase() !== "and") {
+        levelsData[`l${currentLevel}`].problems.push({ title: currentLineToProcess, moduleName: currentModuleFullName });
       }
 
       if (bonusCount > 0) {
