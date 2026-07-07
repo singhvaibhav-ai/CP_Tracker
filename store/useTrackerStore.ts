@@ -12,7 +12,7 @@ export const useTrackerStore = create<TrackerStore & {
       dailyLogs: {},
       collapsedItems: [],
       isAuthenticated: false,
-      paceMode: (typeof window !== 'undefined' && localStorage.getItem('paceMode') as 'adaptive' | 'calendar') || 'adaptive',
+      paceMode: (typeof window !== 'undefined' && localStorage.getItem('paceMode') as 'adaptive' | 'calendar') || (new Date() < new Date('2026-07-27T00:00:00') ? 'calendar' : 'adaptive'),
       userName: (typeof window !== 'undefined' && localStorage.getItem('userName')) || 'Student',
 
       setPaceMode: (mode) => {
