@@ -271,7 +271,7 @@ export default function Home() {
   const renderTodayBuckets = (dayNumber: number, type: 'lectures' | 'problems') => {
     // 1. Backlogs: Tasks from Day 1 to Yesterday where isCompleted === false
     const backlogs: (Task & { dayNumber: number })[] = [];
-    for (let d = 1; d < activeStudyDayIndex; d++) {
+    for (let d = 1; d < dayNumber; d++) {
       const dayData = courseDays[d - 1];
       if (dayData) {
         dayData[type].forEach(task => {
@@ -296,7 +296,7 @@ export default function Home() {
     // 4. Additional Tasks: Tasks assigned to Tomorrow or beyond where isCompleted === true AND updatedAt matches Today
     const localTodayStr = format(new Date(), 'yyyy-MM-dd');
     const additional: (Task & { dayNumber: number })[] = [];
-    for (let d = activeStudyDayIndex + 1; d <= 70; d++) {
+    for (let d = dayNumber + 1; d <= 70; d++) {
       const dayData = courseDays[d - 1];
       if (dayData) {
         dayData[type].forEach(task => {
@@ -727,22 +727,20 @@ export default function Home() {
                   <button
                     onClick={() => setPaceMode('calendar')}
                     disabled={isTargetPassed}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      effectivePaceMode === 'calendar'
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${effectivePaceMode === 'calendar'
                         ? 'bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.3)] border border-blue-400/20'
                         : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700/80 disabled:opacity-50 disabled:cursor-not-allowed border border-transparent'
-                    }`}
+                      }`}
                     title={isTargetPassed ? "Calendar pacing is disabled because target date has passed!" : "Sync with real calendar dates"}
                   >
                     Calendar Sync
                   </button>
                   <button
                     onClick={() => setPaceMode('adaptive')}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      effectivePaceMode === 'adaptive'
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${effectivePaceMode === 'adaptive'
                         ? 'bg-emerald-500 text-zinc-950 shadow-[0_0_10px_rgba(16,185,129,0.3)] border border-emerald-400/20'
                         : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700/80 border border-transparent'
-                    }`}
+                      }`}
                     title="Focus on first incomplete day"
                   >
                     Adaptive Pace
@@ -931,22 +929,20 @@ export default function Home() {
           <div className="flex gap-8">
             <button
               onClick={() => setMainTab('roadmap')}
-              className={`flex items-center gap-2 py-4 text-xs md:text-sm font-black uppercase tracking-wider transition-colors border-b-2 ${
-                mainTab === 'roadmap'
+              className={`flex items-center gap-2 py-4 text-xs md:text-sm font-black uppercase tracking-wider transition-colors border-b-2 ${mainTab === 'roadmap'
                   ? 'border-emerald-500 text-emerald-400'
                   : 'border-transparent text-zinc-500 hover:text-zinc-300'
-              }`}
+                }`}
             >
               <ClipboardList className="w-4.5 h-4.5" />
               Roadmap
             </button>
             <button
               onClick={() => setMainTab('activity')}
-              className={`flex items-center gap-2 py-4 text-xs md:text-sm font-black uppercase tracking-wider transition-colors border-b-2 ${
-                mainTab === 'activity'
+              className={`flex items-center gap-2 py-4 text-xs md:text-sm font-black uppercase tracking-wider transition-colors border-b-2 ${mainTab === 'activity'
                   ? 'border-emerald-500 text-emerald-400'
                   : 'border-transparent text-zinc-500 hover:text-zinc-300'
-              }`}
+                }`}
             >
               <CalendarIcon className="w-4.5 h-4.5" />
               Activity Log
@@ -958,323 +954,329 @@ export default function Home() {
           /* Level Grouping and Grids */
           <div className="space-y-24">
             <AnimatePresence>
-            {LEVEL_BOUNDARIES.map((level) => {
-              const daysInLevel = overallVisibleDays.filter(
-                (d) => d.dayNumber >= level.start && d.dayNumber <= level.end
-              );
+              {LEVEL_BOUNDARIES.map((level) => {
+                const daysInLevel = overallVisibleDays.filter(
+                  (d) => d.dayNumber >= level.start && d.dayNumber <= level.end
+                );
 
-              const isLocked = daysInLevel.length === 0;
-              if (isLocked) return null;
+                const isLocked = daysInLevel.length === 0;
+                if (isLocked) return null;
 
-              const levelId = `level-${level.id}`;
-              const isCollapsed = collapsedItems.includes(levelId);
-              const isCompleted = isLevelComplete(level.start, level.end);
+                const levelId = `level-${level.id}`;
+                const isLevelCompletedBeforeCurrent = level.end < activeStudyDayIndex;
+                const isCollapsedByDefault = isLevelCompletedBeforeCurrent;
+                const isCollapsed = collapsedItems.includes(levelId)
+                  ? !isCollapsedByDefault
+                  : isCollapsedByDefault;
+                const isCompleted = isLevelComplete(level.start, level.end);
 
-              return (
-                <motion.section
-                  key={levelId}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-4"
-                >
-                  {/* LEVEL BANNER */}
-                  <button
-                    onClick={() => toggleCollapse(levelId)}
-                    className="w-full text-left relative overflow-hidden rounded-3xl bg-gradient-to-r from-zinc-900 to-zinc-950 border border-zinc-800 shadow-2xl group transition-all hover:border-zinc-700"
+                return (
+                  <motion.section
+                    key={levelId}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-4"
                   >
-                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 group-hover:opacity-30 transition-opacity"></div>
-                    <div className="relative z-10 p-5 md:p-7 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 w-full text-left">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-4">
-                            <ChevronDown
-                              className={`w-8 h-8 text-zinc-500 transition-transform duration-500 group-hover:text-zinc-400 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}
-                            />
-                            <div className="text-emerald-500 font-bold tracking-[0.2em] uppercase text-sm">
-                              {level.dates}
+                    {/* LEVEL BANNER */}
+                    <button
+                      onClick={() => toggleCollapse(levelId)}
+                      className="w-full text-left relative overflow-hidden rounded-3xl bg-gradient-to-r from-zinc-900 to-zinc-950 border border-zinc-800 shadow-2xl group transition-all hover:border-zinc-700"
+                    >
+                      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 group-hover:opacity-30 transition-opacity"></div>
+                      <div className="relative z-10 p-5 md:p-7 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 w-full text-left">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-4">
+                              <ChevronDown
+                                className={`w-8 h-8 text-zinc-500 transition-transform duration-500 group-hover:text-zinc-400 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}
+                              />
+                              <div className="text-emerald-500 font-bold tracking-[0.2em] uppercase text-sm">
+                                {level.dates}
+                              </div>
                             </div>
+                            <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight flex items-center gap-4 pl-12">
+                              {level.name}
+                            </h2>
                           </div>
-                          <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight flex items-center gap-4 pl-12">
-                            {level.name}
-                          </h2>
+
+                          {/* LEVEL PROGRESS BAR */}
+                          {(() => {
+                            const levelProg = getLevelProgress(level.start, level.end);
+                            return (
+                              <div className="flex flex-col sm:flex-row items-center gap-6 lg:ml-auto pl-12 lg:pl-0">
+                                <div className="shrink-0 text-left">
+                                  <div className="text-[10px] font-black text-zinc-500 tracking-widest mb-1.5 uppercase text-left">
+                                    Level Progress
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                    <div className="w-56 sm:w-64 h-3 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800 shadow-inner relative">
+                                      <motion.div
+                                        className="h-full bg-gradient-to-r from-blue-500 to-emerald-400 rounded-full"
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${levelProg.percentage}%` }}
+                                        transition={{ duration: 1, ease: "easeOut" }}
+                                      />
+                                    </div>
+                                    <div className="flex flex-col text-left justify-center min-w-[80px]">
+                                      <span className="font-extrabold text-base text-emerald-400 leading-none">
+                                        {levelProg.percentage}%
+                                      </span>
+                                      <span className="text-[10px] text-zinc-500 font-bold mt-1 whitespace-nowrap">
+                                        {levelProg.completed}/{levelProg.total} Tasks
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="hidden lg:flex shrink-0 px-6 py-3 bg-zinc-950/80 backdrop-blur-md rounded-2xl border border-zinc-800 text-zinc-400 font-medium items-center gap-3">
+                                  {isCompleted && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                                  Days {level.start} — {level.end}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
-
-                        {/* LEVEL PROGRESS BAR */}
-                        {(() => {
-                          const levelProg = getLevelProgress(level.start, level.end);
-                          return (
-                            <div className="flex flex-col sm:flex-row items-center gap-6 lg:ml-auto pl-12 lg:pl-0">
-                              <div className="shrink-0 text-left">
-                                <div className="text-[10px] font-black text-zinc-500 tracking-widest mb-1.5 uppercase text-left">
-                                  Level Progress
-                                </div>
-                                <div className="flex items-center gap-4">
-                                  <div className="w-56 sm:w-64 h-3 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800 shadow-inner relative">
-                                    <motion.div
-                                      className="h-full bg-gradient-to-r from-blue-500 to-emerald-400 rounded-full"
-                                      initial={{ width: 0 }}
-                                      animate={{ width: `${levelProg.percentage}%` }}
-                                      transition={{ duration: 1, ease: "easeOut" }}
-                                    />
-                                  </div>
-                                  <div className="flex flex-col text-left justify-center min-w-[80px]">
-                                    <span className="font-extrabold text-base text-emerald-400 leading-none">
-                                      {levelProg.percentage}%
-                                    </span>
-                                    <span className="text-[10px] text-zinc-500 font-bold mt-1 whitespace-nowrap">
-                                      {levelProg.completed}/{levelProg.total} Tasks
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="hidden lg:flex shrink-0 px-6 py-3 bg-zinc-950/80 backdrop-blur-md rounded-2xl border border-zinc-800 text-zinc-400 font-medium items-center gap-3">
-                                {isCompleted && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
-                                Days {level.start} — {level.end}
-                              </div>
-                            </div>
-                          );
-                        })()}
                       </div>
-                    </div>
-                  </button>
+                    </button>
 
-                  {/* 2-COLUMN GRID FOR THIS LEVEL (COLLAPSIBLE) */}
-                  <AnimatePresence initial={false}>
-                    {!isCollapsed && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                        animate={{ height: 'auto', opacity: 1, overflow: 'visible' }}
-                        exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                        transition={{ duration: 0.5, ease: 'easeInOut' }}
-                        style={{ overflow: isCollapsed ? 'hidden' : 'visible' }}
-                      >
-                        <div className="md:hidden flex p-1 bg-zinc-900 border border-zinc-800 rounded-xl mt-6">
-                          <button
-                            onClick={() => setActiveTab('lectures')}
-                            className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors ${activeTab === 'lectures' ? 'bg-zinc-800 text-blue-400' : 'text-zinc-500 hover:text-zinc-400'}`}
-                          >
-                            Lectures
-                          </button>
-                          <button
-                            onClick={() => setActiveTab('problems')}
-                            className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors ${activeTab === 'problems' ? 'bg-zinc-800 text-emerald-400' : 'text-zinc-500 hover:text-zinc-400'}`}
-                          >
-                            Problems
-                          </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12 relative items-start pt-2">
-
-                          {/* LECTURES COLUMN */}
-                          <div className={`space-y-6 ${activeTab === 'problems' ? 'hidden md:block' : ''}`}>
-                            <div className="bg-zinc-950/90 backdrop-blur-md h-[72px] py-0 border-b border-zinc-800 flex items-center gap-3 sticky top-[112px] z-40 shadow-md">
-                              <div className="p-2 bg-blue-500/20 rounded-lg">
-                                <Video className="w-5 h-5 text-blue-400" />
-                              </div>
-                              <h3 className="text-xl font-bold text-white uppercase tracking-wider">Lectures</h3>
-                            </div>
-
-                            <div className="space-y-0 pb-8">
-                              {maxVisibleLectureDayIndex < level.start && (
-                                <div className="flex flex-col items-center justify-center py-12 opacity-50 space-y-4 bg-zinc-900/20 rounded-2xl border border-zinc-800/30 border-dashed">
-                                  <Lock className="w-8 h-8 text-zinc-600" />
-                                  <p className="text-zinc-500 font-medium uppercase tracking-widest text-xs text-center">
-                                    Level Locked<br />Complete Day {level.start - 1} Lectures
-                                  </p>
-                                </div>
-                              )}
-                              {daysInLevel.map((day) => {
-                                if (day.dayNumber > maxVisibleLectureDayIndex) return null;
-                                if (day.lectures.length === 0) return null;
-
-                                const dayCollapseId = `day-${day.dayNumber}-lectures`;
-                                const isDayCollapsed = collapsedItems.includes(dayCollapseId)
-                                  ? (day.dayNumber === activeStudyDayIndex ? true : false)
-                                  : (day.dayNumber === activeStudyDayIndex ? false : true);
-
-                                return (
-                                  <div
-                                    key={`lectures-day-${day.dayNumber}`}
-                                    className={`bg-zinc-900/30 px-5 pt-0 pb-0 rounded-2xl border border-zinc-800/40 transition-all duration-300 ${isDayCollapsed ? 'overflow-hidden mb-0' : 'overflow-visible mb-6'
-                                      }`}
-                                  >
-                                    <button
-                                      onClick={() => toggleCollapse(dayCollapseId)}
-                                      className="flex items-center gap-4 h-[60px] py-0 -mx-5 px-5 w-[calc(100%+2.5rem)] border-b border-zinc-800/50 rounded-t-2xl rounded-b-none shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
-                                    >
-                                      <ChevronDown
-                                        className={`w-5 h-5 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isDayCollapsed ? '-rotate-90' : 'rotate-0'}`}
-                                      />
-                                      <span className="text-sm font-black text-blue-500 tracking-[0.2em] uppercase whitespace-nowrap">
-                                        Day {day.dayNumber}
-                                      </span>
-                                      {day.dayNumber === activeStudyDayIndex && (
-                                        <span className="text-[10px] font-black bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded uppercase tracking-wider">
-                                          Target
-                                        </span>
-                                      )}
-                                      {day.dayNumber === baseRealWorldDayIndex && (
-                                        <span className="text-[10px] font-black bg-zinc-800 text-zinc-400 border border-zinc-700 px-2 py-0.5 rounded uppercase tracking-wider">
-                                          Today
-                                        </span>
-                                      )}
-                                      <div className="h-px flex-1 bg-zinc-800/80"></div>
-                                      <span className="text-xs text-zinc-500 font-medium whitespace-nowrap">
-                                        {format(day.date ? new Date(day.date) : addDays(START_DATE, day.dayNumber - 1), 'MMM do')}
-                                      </span>
-                                    </button>
-
-                                    <AnimatePresence initial={false}>
-                                      {!isDayCollapsed && (
-                                        <motion.div
-                                          initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                                          animate={{ height: 'auto', opacity: 1, overflow: 'visible' }}
-                                          exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                                          transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                          style={{ overflow: isDayCollapsed ? 'hidden' : 'visible' }}
-                                          className="space-y-4 pt-4 pb-5"
-                                        >
-                                          {day.dayNumber === activeStudyDayIndex ? (
-                                            renderTodayBuckets(day.dayNumber, 'lectures')
-                                          ) : day.dayNumber < activeStudyDayIndex ? (
-                                            renderPastDay(day, 'lectures')
-                                          ) : (
-                                            renderFutureDay(day, 'lectures')
-                                          )}
-                                        </motion.div>
-                                      )}
-                                    </AnimatePresence>
-                                  </div>
-                                );
-                              })}
-                              {maxVisibleLectureDayIndex <= level.end && maxVisibleLectureDayIndex >= level.start && (
-                                <div className="flex flex-col items-center justify-center py-6 opacity-50 space-y-2">
-                                  <Lock className="w-6 h-6 text-zinc-600" />
-                                  <p className="text-zinc-500 font-medium uppercase tracking-widest text-xs">
-                                    Complete Day {maxVisibleLectureDayIndex} Lectures
-                                  </p>
-                                </div>
-                              )}
-                            </div>
+                    {/* 2-COLUMN GRID FOR THIS LEVEL (COLLAPSIBLE) */}
+                    <AnimatePresence initial={false}>
+                      {!isCollapsed && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                          animate={{ height: 'auto', opacity: 1, overflow: 'visible' }}
+                          exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                          transition={{ duration: 0.5, ease: 'easeInOut' }}
+                          style={{ overflow: isCollapsed ? 'hidden' : 'visible' }}
+                        >
+                          <div className="md:hidden flex p-1 bg-zinc-900 border border-zinc-800 rounded-xl mt-6">
+                            <button
+                              onClick={() => setActiveTab('lectures')}
+                              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors ${activeTab === 'lectures' ? 'bg-zinc-800 text-blue-400' : 'text-zinc-500 hover:text-zinc-400'}`}
+                            >
+                              Lectures
+                            </button>
+                            <button
+                              onClick={() => setActiveTab('problems')}
+                              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors ${activeTab === 'problems' ? 'bg-zinc-800 text-emerald-400' : 'text-zinc-500 hover:text-zinc-400'}`}
+                            >
+                              Problems
+                            </button>
                           </div>
 
-                          {/* PROBLEMS COLUMN */}
-                          <div className={`space-y-6 ${activeTab === 'lectures' ? 'hidden md:block' : ''}`}>
-                            <div className="bg-zinc-950/90 backdrop-blur-md h-[72px] py-0 border-b border-zinc-800 flex items-center gap-3 sticky top-[112px] z-40 shadow-md">
-                              <div className="p-2 bg-emerald-500/20 rounded-lg">
-                                <Code className="w-5 h-5 text-emerald-400" />
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12 relative items-start pt-2">
+
+                            {/* LECTURES COLUMN */}
+                            <div className={`space-y-6 ${activeTab === 'problems' ? 'hidden md:block' : ''}`}>
+                              <div className="bg-zinc-950/90 backdrop-blur-md h-[72px] py-0 border-b border-zinc-800 flex items-center gap-3 sticky top-[112px] z-40 shadow-md">
+                                <div className="p-2 bg-blue-500/20 rounded-lg">
+                                  <Video className="w-5 h-5 text-blue-400" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white uppercase tracking-wider">Lectures</h3>
                               </div>
-                              <h3 className="text-xl font-bold text-white uppercase tracking-wider">Practice Problems</h3>
-                            </div>
 
-                            <div className="space-y-0 pb-8">
-                              {maxVisibleProblemDayIndex < level.start && (
-                                <div className="flex flex-col items-center justify-center py-12 opacity-50 space-y-4 bg-zinc-900/20 rounded-2xl border border-zinc-800/30 border-dashed">
-                                  <Lock className="w-8 h-8 text-zinc-600" />
-                                  <p className="text-zinc-500 font-medium uppercase tracking-widest text-xs text-center">
-                                    Level Locked<br />Complete Day {level.start - 1} Problems
-                                  </p>
-                                </div>
-                              )}
-
-                              {daysInLevel.map((day) => {
-                                if (day.dayNumber > maxVisibleProblemDayIndex) return null;
-                                if (day.problems.length === 0) return null;
-
-                                const dayCollapseId = `day-${day.dayNumber}-problems`;
-                                const isDayCollapsed = collapsedItems.includes(dayCollapseId)
-                                  ? (day.dayNumber === activeStudyDayIndex ? true : false)
-                                  : (day.dayNumber === activeStudyDayIndex ? false : true);
-
-                                return (
-                                  <div
-                                    key={`problems-day-${day.dayNumber}`}
-                                    className={`bg-zinc-900/30 px-5 pt-0 pb-0 rounded-2xl border border-zinc-800/40 transition-all duration-300 ${isDayCollapsed ? 'overflow-hidden mb-0' : 'overflow-visible mb-6'
-                                      }`}
-                                  >
-                                    <button
-                                      onClick={() => toggleCollapse(dayCollapseId)}
-                                      className="flex items-center gap-4 h-[60px] py-0 -mx-5 px-5 w-[calc(100%+2.5rem)] border-b border-zinc-800/50 rounded-t-2xl rounded-b-none shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
-                                    >
-                                      <ChevronDown
-                                        className={`w-5 h-5 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isDayCollapsed ? '-rotate-90' : 'rotate-0'}`}
-                                      />
-                                      <span className="text-sm font-black text-emerald-500 tracking-[0.2em] uppercase whitespace-nowrap">
-                                        Day {day.dayNumber}
-                                      </span>
-                                      {day.dayNumber === activeStudyDayIndex && (
-                                        <span className="text-[10px] font-black bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded uppercase tracking-wider">
-                                          Target
-                                        </span>
-                                      )}
-                                      {day.dayNumber === baseRealWorldDayIndex && (
-                                        <span className="text-[10px] font-black bg-zinc-800 text-zinc-400 border border-zinc-700 px-2 py-0.5 rounded uppercase tracking-wider">
-                                          Today
-                                        </span>
-                                      )}
-                                      <div className="h-px flex-1 bg-zinc-800/80"></div>
-                                      <span className="text-xs text-zinc-500 font-medium whitespace-nowrap">
-                                        {format(day.date ? new Date(day.date) : addDays(START_DATE, day.dayNumber - 1), 'MMM do')}
-                                      </span>
-                                    </button>
-
-                                    <AnimatePresence initial={false}>
-                                      {!isDayCollapsed && (
-                                        <motion.div
-                                          initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                                          animate={{ height: 'auto', opacity: 1, overflow: 'visible' }}
-                                          exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
-                                          transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                          style={{ overflow: isDayCollapsed ? 'hidden' : 'visible' }}
-                                          className="space-y-4 pt-4 pb-5"
-                                        >
-                                          {day.dayNumber === activeStudyDayIndex ? (
-                                            renderTodayBuckets(day.dayNumber, 'problems')
-                                          ) : day.dayNumber < activeStudyDayIndex ? (
-                                            renderPastDay(day, 'problems')
-                                          ) : (
-                                            renderFutureDay(day, 'problems')
-                                          )}
-                                        </motion.div>
-                                      )}
-                                    </AnimatePresence>
+                              <div className="space-y-0 pb-8">
+                                {maxVisibleLectureDayIndex < level.start && (
+                                  <div className="flex flex-col items-center justify-center py-12 opacity-50 space-y-4 bg-zinc-900/20 rounded-2xl border border-zinc-800/30 border-dashed">
+                                    <Lock className="w-8 h-8 text-zinc-600" />
+                                    <p className="text-zinc-500 font-medium uppercase tracking-widest text-xs text-center">
+                                      Level Locked<br />Complete Day {level.start - 1} Lectures
+                                    </p>
                                   </div>
-                                );
-                              })}
-                              {maxVisibleProblemDayIndex <= level.end && maxVisibleProblemDayIndex >= level.start && (
-                                <div className="flex flex-col items-center justify-center py-6 opacity-50 space-y-2">
-                                  <Lock className="w-6 h-6 text-zinc-600" />
-                                  <p className="text-zinc-500 font-medium uppercase tracking-widest text-xs">
-                                    Complete Day {maxVisibleProblemDayIndex} Problems
-                                  </p>
-                                </div>
-                              )}
+                                )}
+                                {daysInLevel.map((day) => {
+                                  if (day.dayNumber > maxVisibleLectureDayIndex) return null;
+                                  if (day.lectures.length === 0) return null;
+
+                                  const dayCollapseId = `day-${day.dayNumber}-lectures`;
+                                  const isActiveDay = day.dayNumber === activeStudyDayIndex || day.dayNumber === baseRealWorldDayIndex;
+                                  const isDayCollapsed = collapsedItems.includes(dayCollapseId)
+                                    ? (isActiveDay ? true : false)
+                                    : (isActiveDay ? false : true);
+
+                                  return (
+                                    <div
+                                      key={`lectures-day-${day.dayNumber}`}
+                                      className={`bg-zinc-900/30 px-5 pt-0 pb-0 rounded-2xl border border-zinc-800/40 transition-all duration-300 ${isDayCollapsed ? 'overflow-hidden mb-0' : 'overflow-visible mb-6'
+                                        }`}
+                                    >
+                                      <button
+                                        onClick={() => toggleCollapse(dayCollapseId)}
+                                        className="flex items-center gap-4 h-[60px] py-0 -mx-5 px-5 w-[calc(100%+2.5rem)] border-b border-zinc-800/50 rounded-t-2xl rounded-b-none shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
+                                      >
+                                        <ChevronDown
+                                          className={`w-5 h-5 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isDayCollapsed ? '-rotate-90' : 'rotate-0'}`}
+                                        />
+                                        <span className="text-sm font-black text-blue-500 tracking-[0.2em] uppercase whitespace-nowrap">
+                                          Day {day.dayNumber}
+                                        </span>
+                                        {day.dayNumber === activeStudyDayIndex && (
+                                          <span className="text-[10px] font-black bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded uppercase tracking-wider">
+                                            Target
+                                          </span>
+                                        )}
+                                        {day.dayNumber === baseRealWorldDayIndex && (
+                                          <span className="text-[10px] font-black bg-zinc-800 text-zinc-400 border border-zinc-700 px-2 py-0.5 rounded uppercase tracking-wider">
+                                            Today
+                                          </span>
+                                        )}
+                                        <div className="h-px flex-1 bg-zinc-800/80"></div>
+                                        <span className="text-xs text-zinc-500 font-medium whitespace-nowrap">
+                                          {format(day.date ? new Date(day.date) : addDays(START_DATE, day.dayNumber - 1), 'MMM do')}
+                                        </span>
+                                      </button>
+
+                                      <AnimatePresence initial={false}>
+                                        {!isDayCollapsed && (
+                                          <motion.div
+                                            initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                                            animate={{ height: 'auto', opacity: 1, overflow: 'visible' }}
+                                            exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                                            transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                            style={{ overflow: isDayCollapsed ? 'hidden' : 'visible' }}
+                                            className="space-y-4 pt-4 pb-5"
+                                          >
+                                            {day.dayNumber === activeStudyDayIndex || day.dayNumber === baseRealWorldDayIndex ? (
+                                              renderTodayBuckets(day.dayNumber, 'lectures')
+                                            ) : day.dayNumber < baseRealWorldDayIndex ? (
+                                              renderPastDay(day, 'lectures')
+                                            ) : (
+                                              renderFutureDay(day, 'lectures')
+                                            )}
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
+                                    </div>
+                                  );
+                                })}
+                                {maxVisibleLectureDayIndex <= level.end && maxVisibleLectureDayIndex >= level.start && (
+                                  <div className="flex flex-col items-center justify-center py-6 opacity-50 space-y-2">
+                                    <Lock className="w-6 h-6 text-zinc-600" />
+                                    <p className="text-zinc-500 font-medium uppercase tracking-widest text-xs">
+                                      Complete Day {maxVisibleLectureDayIndex} Lectures
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
                             </div>
+
+                            {/* PROBLEMS COLUMN */}
+                            <div className={`space-y-6 ${activeTab === 'lectures' ? 'hidden md:block' : ''}`}>
+                              <div className="bg-zinc-950/90 backdrop-blur-md h-[72px] py-0 border-b border-zinc-800 flex items-center gap-3 sticky top-[112px] z-40 shadow-md">
+                                <div className="p-2 bg-emerald-500/20 rounded-lg">
+                                  <Code className="w-5 h-5 text-emerald-400" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white uppercase tracking-wider">Practice Problems</h3>
+                              </div>
+
+                              <div className="space-y-0 pb-8">
+                                {maxVisibleProblemDayIndex < level.start && (
+                                  <div className="flex flex-col items-center justify-center py-12 opacity-50 space-y-4 bg-zinc-900/20 rounded-2xl border border-zinc-800/30 border-dashed">
+                                    <Lock className="w-8 h-8 text-zinc-600" />
+                                    <p className="text-zinc-500 font-medium uppercase tracking-widest text-xs text-center">
+                                      Level Locked<br />Complete Day {level.start - 1} Problems
+                                    </p>
+                                  </div>
+                                )}
+
+                                {daysInLevel.map((day) => {
+                                  if (day.dayNumber > maxVisibleProblemDayIndex) return null;
+                                  if (day.problems.length === 0) return null;
+
+                                  const dayCollapseId = `day-${day.dayNumber}-problems`;
+                                  const isActiveDay = day.dayNumber === activeStudyDayIndex || day.dayNumber === baseRealWorldDayIndex;
+                                  const isDayCollapsed = collapsedItems.includes(dayCollapseId)
+                                    ? (isActiveDay ? true : false)
+                                    : (isActiveDay ? false : true);
+
+                                  return (
+                                    <div
+                                      key={`problems-day-${day.dayNumber}`}
+                                      className={`bg-zinc-900/30 px-5 pt-0 pb-0 rounded-2xl border border-zinc-800/40 transition-all duration-300 ${isDayCollapsed ? 'overflow-hidden mb-0' : 'overflow-visible mb-6'
+                                        }`}
+                                    >
+                                      <button
+                                        onClick={() => toggleCollapse(dayCollapseId)}
+                                        className="flex items-center gap-4 h-[60px] py-0 -mx-5 px-5 w-[calc(100%+2.5rem)] border-b border-zinc-800/50 rounded-t-2xl rounded-b-none shadow-lg bg-zinc-950/90 backdrop-blur-md sticky top-[184px] z-30 group transition-all hover:bg-zinc-900/50 text-left"
+                                      >
+                                        <ChevronDown
+                                          className={`w-5 h-5 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${isDayCollapsed ? '-rotate-90' : 'rotate-0'}`}
+                                        />
+                                        <span className="text-sm font-black text-emerald-500 tracking-[0.2em] uppercase whitespace-nowrap">
+                                          Day {day.dayNumber}
+                                        </span>
+                                        {day.dayNumber === activeStudyDayIndex && (
+                                          <span className="text-[10px] font-black bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded uppercase tracking-wider">
+                                            Target
+                                          </span>
+                                        )}
+                                        {day.dayNumber === baseRealWorldDayIndex && (
+                                          <span className="text-[10px] font-black bg-zinc-800 text-zinc-400 border border-zinc-700 px-2 py-0.5 rounded uppercase tracking-wider">
+                                            Today
+                                          </span>
+                                        )}
+                                        <div className="h-px flex-1 bg-zinc-800/80"></div>
+                                        <span className="text-xs text-zinc-500 font-medium whitespace-nowrap">
+                                          {format(day.date ? new Date(day.date) : addDays(START_DATE, day.dayNumber - 1), 'MMM do')}
+                                        </span>
+                                      </button>
+
+                                      <AnimatePresence initial={false}>
+                                        {!isDayCollapsed && (
+                                          <motion.div
+                                            initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                                            animate={{ height: 'auto', opacity: 1, overflow: 'visible' }}
+                                            exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                                            transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                            style={{ overflow: isDayCollapsed ? 'hidden' : 'visible' }}
+                                            className="space-y-4 pt-4 pb-5"
+                                          >
+                                            {day.dayNumber === activeStudyDayIndex || day.dayNumber === baseRealWorldDayIndex ? (
+                                              renderTodayBuckets(day.dayNumber, 'problems')
+                                            ) : day.dayNumber < baseRealWorldDayIndex ? (
+                                              renderPastDay(day, 'problems')
+                                            ) : (
+                                              renderFutureDay(day, 'problems')
+                                            )}
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
+                                    </div>
+                                  );
+                                })}
+                                {maxVisibleProblemDayIndex <= level.end && maxVisibleProblemDayIndex >= level.start && (
+                                  <div className="flex flex-col items-center justify-center py-6 opacity-50 space-y-2">
+                                    <Lock className="w-6 h-6 text-zinc-600" />
+                                    <p className="text-zinc-500 font-medium uppercase tracking-widest text-xs">
+                                      Complete Day {maxVisibleProblemDayIndex} Problems
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
                           </div>
 
-                        </div>
+                          {/* SMART AUTO-COLLAPSE FINISHED LEVEL BUTTON */}
+                          {isCompleted && (
+                            <motion.button
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              onClick={() => toggleCollapse(levelId)}
+                              className="mt-6 w-full py-4 text-center text-xs font-bold text-zinc-500 hover:text-emerald-400 transition-colors uppercase tracking-widest border border-dashed border-zinc-800 hover:border-emerald-500/30 rounded-2xl flex items-center justify-center gap-2"
+                            >
+                              <ChevronDown className="w-4 h-4 -rotate-90" />
+                              Collapse Finished Level
+                            </motion.button>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
-                        {/* SMART AUTO-COLLAPSE FINISHED LEVEL BUTTON */}
-                        {isCompleted && (
-                          <motion.button
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            onClick={() => toggleCollapse(levelId)}
-                            className="mt-6 w-full py-4 text-center text-xs font-bold text-zinc-500 hover:text-emerald-400 transition-colors uppercase tracking-widest border border-dashed border-zinc-800 hover:border-emerald-500/30 rounded-2xl flex items-center justify-center gap-2"
-                          >
-                            <ChevronDown className="w-4 h-4 -rotate-90" />
-                            Collapse Finished Level
-                          </motion.button>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                </motion.section>
-              );
-            })}
-          </AnimatePresence>
+                  </motion.section>
+                );
+              })}
+            </AnimatePresence>
 
           </div>
         ) : (
@@ -1387,7 +1389,7 @@ export default function Home() {
                       <div key={log.dateStr} className="relative pl-14">
                         {/* Timeline node */}
                         <div className="absolute left-3.5 top-1.5 w-5 h-5 rounded-full bg-zinc-950 border-4 border-emerald-500 flex items-center justify-center shadow-[0_0_10px_rgba(16,185,129,0.5)] z-10"></div>
-                        
+
                         <div className="bg-zinc-900 border border-zinc-800/80 rounded-2xl p-5 md:p-6 space-y-4 shadow-xl hover:border-zinc-700/50 transition-colors">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800 pb-3">
                             <span className="font-extrabold text-white text-base md:text-lg">
@@ -1395,7 +1397,7 @@ export default function Home() {
                             </span>
                             <div className="flex items-center gap-2 flex-wrap">
                               {log.levelCompletions.map(lvlId => (
-                                <span 
+                                <span
                                   key={lvlId}
                                   className="text-[10px] font-black bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-lg shadow-black/20"
                                 >
@@ -1589,7 +1591,7 @@ export default function Home() {
               </button>
 
               {/* Printable Certificate Frame */}
-              <div 
+              <div
                 id="print-certificate-container"
                 className="bg-zinc-900/50 border-[6px] border-double border-amber-500/40 rounded-2xl p-6 md:p-12 relative overflow-hidden flex flex-col items-center text-center space-y-6 md:space-y-8 bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 shadow-inner"
               >
@@ -1625,7 +1627,7 @@ export default function Home() {
                   <p className="text-sm md:text-base text-zinc-300 leading-relaxed font-sans">
                     for successfully completing and mastering the syllabus of{' '}
                     <span className="font-extrabold text-white text-base md:text-lg block mt-2 tracking-wide uppercase">
-                      {selectedCertificateLevel === 'full' 
+                      {selectedCertificateLevel === 'full'
                         ? 'TLE CP Tracker: Master Syllabus (70 Days)'
                         : `TLE CP Tracker: Level ${selectedCertificateLevel} Curriculum`}
                     </span>
@@ -1634,12 +1636,12 @@ export default function Home() {
                     {selectedCertificateLevel === 'full'
                       ? 'Demonstrating competence across advanced topics including C++ Standard Template Library, Number Theory, Sliding Windows, Greedy Algorithms, Dynamic Programming, and Advanced Data Structures (Segment Trees, DSU, and Graphs).'
                       : selectedCertificateLevel === 1
-                      ? 'Mastered C++ basics, local IDE setups, Online Judges, Searching & Sorting algorithms, and the C++ Standard Template Library (STL).'
-                      : selectedCertificateLevel === 2
-                      ? 'Prefix Sums, Bit Manipulation, Backtracking, Number Theory, Stacks, Queues, and Advanced Searching & Sorting techniques.'
-                      : selectedCertificateLevel === 3
-                      ? 'Advanced Binary Search, Interactive Problems, Two Pointers, Combinatorics, Greedy Algorithms, Hashing, and Tries.'
-                      : 'Advanced Dynamic Programming, Trees, Graphs, Disjoint Set Union (DSU), Segment Trees, and Sparse Tables.'}
+                        ? 'Mastered C++ basics, local IDE setups, Online Judges, Searching & Sorting algorithms, and the C++ Standard Template Library (STL).'
+                        : selectedCertificateLevel === 2
+                          ? 'Prefix Sums, Bit Manipulation, Backtracking, Number Theory, Stacks, Queues, and Advanced Searching & Sorting techniques.'
+                          : selectedCertificateLevel === 3
+                            ? 'Advanced Binary Search, Interactive Problems, Two Pointers, Combinatorics, Greedy Algorithms, Hashing, and Tries.'
+                            : 'Advanced Dynamic Programming, Trees, Graphs, Disjoint Set Union (DSU), Segment Trees, and Sparse Tables.'}
                   </p>
                 </div>
 
@@ -1690,7 +1692,8 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes confetti-fall {
           0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
           100% { transform: translateY(105vh) rotate(360deg); opacity: 0.2; }
