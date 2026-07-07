@@ -12,6 +12,22 @@ export const useTrackerStore = create<TrackerStore & {
       dailyLogs: {},
       collapsedItems: [],
       isAuthenticated: false,
+      paceMode: (typeof window !== 'undefined' && localStorage.getItem('paceMode') as 'adaptive' | 'calendar') || 'adaptive',
+      userName: (typeof window !== 'undefined' && localStorage.getItem('userName')) || 'Student',
+
+      setPaceMode: (mode) => {
+        set({ paceMode: mode });
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('paceMode', mode);
+        }
+      },
+
+      setUserName: (name) => {
+        set({ userName: name });
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('userName', name);
+        }
+      },
 
       login: async (email, password) => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });

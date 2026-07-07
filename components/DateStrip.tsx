@@ -7,7 +7,9 @@ export default function DateStrip() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const startDate = new Date(2026, 4, 18); // May is 4 (0-indexed)
-  const endDate = new Date(2026, 6, 27); // July is 6
+  const defaultEndDate = new Date(2026, 6, 27); // July is 6
+  const todayDate = new Date();
+  const endDate = todayDate > defaultEndDate ? todayDate : defaultEndDate;
 
   const days = eachDayOfInterval({
     start: startDate,

@@ -33,4 +33,8 @@ export interface TrackerStore {
   isAuthenticated: boolean;
   login: (email: string, pass: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  paceMode: 'adaptive' | 'calendar';
+  setPaceMode: (mode: 'adaptive' | 'calendar') => void;
+  userName: string;
+  setUserName: (name: string) => void;
 }
